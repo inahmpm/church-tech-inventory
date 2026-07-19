@@ -1,4 +1,4 @@
-# Church Tech Inventory
+# COG Dasma Inventory
 
 Equipment inventory + borrower workflow, built with React (Vite) + Firebase.
 

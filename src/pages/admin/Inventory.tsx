@@ -140,7 +140,7 @@ export default function Inventory() {
             >
               Filter
               {activeFilterCount > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-indigo-600 text-white text-[10px] w-4 h-4 align-middle">
+                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary-600 text-white text-[10px] w-4 h-4 align-middle">
                   {activeFilterCount}
                 </span>
               )}
@@ -206,7 +206,7 @@ export default function Inventory() {
             <div
               key={e.id}
               onClick={() => setSelected(e)}
-              className={`card p-3 space-y-1 cursor-pointer ${isSelected ? 'ring-2 ring-indigo-400' : ''}`}
+              className={`card p-3 space-y-1 cursor-pointer ${isSelected ? 'ring-2 ring-primary-400' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium text-slate-800">{e.item}</span>
@@ -250,7 +250,7 @@ export default function Inventory() {
                 <tr
                   key={e.id}
                   onClick={() => setSelected(e)}
-                  className={`cursor-pointer hover:bg-slate-50 ${isSelected ? 'bg-indigo-50' : ''}`}
+                  className={`cursor-pointer hover:bg-slate-50 ${isSelected ? 'bg-primary-50' : ''}`}
                 >
                   <Td>{e.category}</Td>
                   <Td className="font-mono">{e.inventoryCode}</Td>

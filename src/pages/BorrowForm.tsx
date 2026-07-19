@@ -44,7 +44,7 @@ export default function BorrowForm() {
             5th floor to have your equipment scanned out.
           </p>
           <button
-            className="text-sm text-indigo-600 font-medium hover:underline"
+            className="text-sm text-primary-600 font-medium hover:underline"
             onClick={() => setSubmittedAt(null)}
           >
             Submit another request
@@ -121,7 +121,7 @@ export default function BorrowForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-indigo-600 text-white font-medium rounded-lg py-2.5 hover:bg-indigo-700 disabled:opacity-50 transition"
+            className="w-full bg-primary-600 text-white font-medium rounded-xl py-2.5 hover:bg-primary-700 disabled:opacity-50 transition"
           >
             {submitting ? 'Submitting...' : 'Submit Request'}
           </button>

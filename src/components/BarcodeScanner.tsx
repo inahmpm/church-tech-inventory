@@ -61,7 +61,7 @@ export default function BarcodeScanner({ onScan }: { onScan: (code: string) => v
       <div>
         <button
           type="button"
-          className="text-sm text-indigo-600 hover:underline"
+          className="text-sm text-primary-600 hover:underline"
           onClick={() => setCameraOn((v) => !v)}
         >
           {cameraOn ? 'Turn off camera scanner' : 'Use camera to scan barcode'}
