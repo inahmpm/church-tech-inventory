@@ -40,8 +40,8 @@ export default function BorrowForm() {
             Submitted on {new Date(submittedAt).toLocaleString()}
           </p>
           <p className="text-slate-500 mb-6">
-            Tech support has received your request. Please proceed to the tech booth to have
-            your equipment scanned out.
+            Tech support has received your request. Please proceed to the Tech Office on the
+            5th floor to have your equipment scanned out.
           </p>
           <button
             className="text-sm text-indigo-600 font-medium hover:underline"
