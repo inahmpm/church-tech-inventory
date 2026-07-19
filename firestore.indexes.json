@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "borrowRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "submittedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "equipment",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "item", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
