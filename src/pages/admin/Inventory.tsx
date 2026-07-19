@@ -20,7 +20,7 @@ export default function Inventory() {
     const q = search.trim().toLowerCase();
     if (!q) return equipment;
     return equipment.filter((e) =>
-      [e.category, e.inventoryCode, e.item, e.assignedTo, e.status]
+      [e.category, e.inventoryCode, e.item, e.assignedTo, e.location, e.status]
         .join(' ')
         .toLowerCase()
         .includes(q),
@@ -76,6 +76,7 @@ export default function Inventory() {
               <Th>Inventory Code</Th>
               <Th>Items</Th>
               <Th>Assigned to</Th>
+              <Th>Location</Th>
               <Th>Purchase Date</Th>
               <Th>Status</Th>
               <Th>Status Details</Th>
@@ -90,6 +91,7 @@ export default function Inventory() {
                 <Td className="font-mono">{e.inventoryCode}</Td>
                 <Td>{e.item}</Td>
                 <Td>{e.assignedTo || '—'}</Td>
+                <Td>{e.location || '—'}</Td>
                 <Td>{e.purchaseDate || '—'}</Td>
                 <Td>
                   <StatusBadge status={e.status} />
@@ -121,7 +123,7 @@ export default function Inventory() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="text-center text-slate-400 py-8">
+                <td colSpan={10} className="text-center text-slate-400 py-8">
                   No equipment found.
                 </td>
               </tr>
