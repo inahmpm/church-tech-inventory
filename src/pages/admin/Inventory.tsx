@@ -3,12 +3,16 @@ import { createEquipment, deleteEquipment, subscribeEquipment, updateEquipment }
 import type { Equipment, NewEquipment } from '../../types';
 import EquipmentFormModal from '../../components/EquipmentFormModal';
 import BarcodeLabel from '../../components/BarcodeLabel';
+import ImportInventoryModal from '../../components/ImportInventoryModal';
+import ExportInventoryModal from '../../components/ExportInventoryModal';
 
 export default function Inventory() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Equipment | 'new' | null>(null);
   const [printing, setPrinting] = useState<Equipment | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => subscribeEquipment(setEquipment), []);
 
@@ -52,6 +56,12 @@ export default function Inventory() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <button className="btn-secondary whitespace-nowrap" onClick={() => setImporting(true)}>
+            Import Inventory
+          </button>
+          <button className="btn-secondary whitespace-nowrap" onClick={() => setExporting(true)}>
+            Export Inventory
+          </button>
           <button className="btn-primary whitespace-nowrap" onClick={() => setEditing('new')}>
             + Add Equipment
           </button>
@@ -143,6 +153,10 @@ export default function Inventory() {
           </div>
         </div>
       )}
+
+      {importing && <ImportInventoryModal onClose={() => setImporting(false)} />}
+
+      {exporting && <ExportInventoryModal equipment={filtered} onClose={() => setExporting(false)} />}
     </div>
   );
 }
