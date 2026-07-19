@@ -6,6 +6,7 @@ import Dashboard from './pages/admin/Dashboard';
 import Inventory from './pages/admin/Inventory';
 import Requests from './pages/admin/Requests';
 import ActiveBorrows from './pages/admin/ActiveBorrows';
+import ReturnHistory from './pages/admin/ReturnHistory';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="requests" element={<Requests />} />
           <Route path="active" element={<ActiveBorrows />} />
+          <Route path="history" element={<ReturnHistory />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/borrow" replace />} />

@@ -8,6 +8,7 @@ const navItems = [
   { to: '/admin/inventory', label: 'Inventory' },
   { to: '/admin/requests', label: 'Borrow Requests' },
   { to: '/admin/active', label: 'Active Borrows' },
+  { to: '/admin/history', label: 'Return History' },
 ];
 
 export default function AdminLayout() {
