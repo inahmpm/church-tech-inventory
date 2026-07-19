@@ -40,7 +40,7 @@ export default function AdminLayout() {
             <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
           </svg>
         </button>
-        <span className="font-semibold text-slate-800 text-sm">{activeLabel ?? 'Church Tech Inventory'}</span>
+        <span className="font-semibold text-slate-800 text-sm">{activeLabel ?? 'COG Dasma Inventory'}</span>
         <div className="w-8" />
       </header>
 
@@ -54,7 +54,15 @@ export default function AdminLayout() {
         }`}
       >
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 font-semibold text-slate-800">
-          Church Tech Inventory
+          <span className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-primary-600 flex items-center justify-center shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                <rect x="8" y="8" width="8" height="8" rx="1.5" />
+                <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" strokeLinecap="round" />
+              </svg>
+            </span>
+            COG Dasma Inventory
+          </span>
           <button
             className="md:hidden text-slate-400 hover:text-slate-600 text-xl leading-none"
             onClick={() => setMenuOpen(false)}
@@ -72,7 +80,7 @@ export default function AdminLayout() {
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 `block px-3 py-2 rounded-lg text-sm font-medium ${
-                  isActive ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+                  isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-100'
                 }`
               }
             >

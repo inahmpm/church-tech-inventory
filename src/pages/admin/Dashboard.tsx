@@ -33,7 +33,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Equipment" value={equipment.length} />
         <StatCard label="Currently Borrowed" value={borrowedCount} accent="text-amber-600" />
-        <StatCard label="Pending Requests" value={pending.length} accent="text-indigo-600" />
+        <StatCard label="Pending Requests" value={pending.length} accent="text-primary-600" />
         <StatCard label="Active Borrows" value={active.length} accent="text-blue-600" />
       </div>
 

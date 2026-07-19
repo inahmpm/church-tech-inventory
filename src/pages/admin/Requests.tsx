@@ -38,7 +38,7 @@ export default function Requests() {
             <div className="text-xs text-slate-500">{r.contactNo}</div>
             <div className="text-xs text-slate-500 truncate">Requested: {r.equipmentRequested}</div>
             <div className="text-xs text-slate-400">{new Date(r.submittedAt).toLocaleString()}</div>
-            <button className="text-indigo-600 hover:underline text-xs pt-1" onClick={() => setOpen(r)}>
+            <button className="text-primary-600 hover:underline text-xs pt-1" onClick={() => setOpen(r)}>
               {r.items.length ? 'Manage scan' : 'Scan equipment'}
             </button>
           </div>
@@ -74,7 +74,7 @@ export default function Requests() {
                 </Td>
                 <Td>{r.items.length}</Td>
                 <Td>
-                  <button className="text-indigo-600 hover:underline text-xs" onClick={() => setOpen(r)}>
+                  <button className="text-primary-600 hover:underline text-xs" onClick={() => setOpen(r)}>
                     {r.items.length ? 'Manage scan' : 'Scan equipment'}
                   </button>
                 </Td>
