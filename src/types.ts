@@ -14,6 +14,7 @@ export interface Equipment {
   inventoryCode: string; // unique barcode value
   item: string;
   assignedTo: string;
+  location: string;
   purchaseDate: string; // yyyy-mm-dd
   status: EquipmentStatus;
   statusDetails: string;

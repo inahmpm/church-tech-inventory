@@ -16,6 +16,7 @@ export default function EquipmentFormModal({
     inventoryCode: initial?.inventoryCode ?? '',
     item: initial?.item ?? '',
     assignedTo: initial?.assignedTo ?? '',
+    location: initial?.location ?? '',
     purchaseDate: initial?.purchaseDate ?? '',
     status: initial?.status ?? 'Good Condition',
     statusDetails: initial?.statusDetails ?? '',
@@ -80,6 +81,15 @@ export default function EquipmentFormModal({
             value={form.assignedTo}
             onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
             placeholder="Person/ministry primarily responsible (optional)"
+          />
+        </Field>
+
+        <Field label="Location">
+          <input
+            className="input"
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+            placeholder="e.g. Main Sanctuary, Storage Room (optional)"
           />
         </Field>
 
