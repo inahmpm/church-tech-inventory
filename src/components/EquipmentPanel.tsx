@@ -1,0 +1,198 @@
+import { useEffect, useState, type FormEvent } from 'react';
+import { EQUIPMENT_STATUSES } from '../types';
+import type { Equipment, EquipmentStatus, NewEquipment } from '../types';
+import BarcodeLabel from './BarcodeLabel';
+
+export default function EquipmentPanel({
+  initial,
+  open,
+  onClose,
+  onSubmit,
+  onDelete,
+}: {
+  initial?: Equipment;
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: NewEquipment) => Promise<void>;
+  onDelete?: (e: Equipment) => void;
+}) {
+  const [form, setForm] = useState<NewEquipment>(blankForm(initial));
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm(blankForm(initial));
+      setError(null);
+    }
+  }, [initial, open]);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      await onSubmit(form);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save equipment.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <div
+        className={`fixed inset-0 bg-black/40 z-40 transition-opacity ${
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-xl flex flex-col transition-transform duration-300 ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <h2 className="font-semibold text-slate-800 text-lg">{initial ? 'Edit Equipment' : 'Add Equipment'}</h2>
+          <button className="text-slate-400 hover:text-slate-600 text-xl leading-none" onClick={onClose} aria-label="Close">
+            &times;
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {form.inventoryCode && (
+            <div className="flex justify-center py-2 border-b border-slate-100">
+              <BarcodeLabel value={form.inventoryCode} itemName={form.item} />
+            </div>
+          )}
+
+          <Field label="Category">
+            <input
+              required
+              className="input"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              placeholder="e.g. Audio, Video, Networking, Consumables"
+            />
+          </Field>
+
+          <Field label="Inventory Code (barcode value)">
+            <input
+              required
+              className="input font-mono"
+              value={form.inventoryCode}
+              onChange={(e) => setForm({ ...form, inventoryCode: e.target.value.toUpperCase() })}
+              placeholder="e.g. AUD-0001"
+            />
+          </Field>
+
+          <Field label="Item">
+            <input
+              required
+              className="input"
+              value={form.item}
+              onChange={(e) => setForm({ ...form, item: e.target.value })}
+              placeholder="e.g. Shure SM58 Wireless Mic"
+            />
+          </Field>
+
+          <Field label="Assigned to">
+            <input
+              className="input"
+              value={form.assignedTo}
+              onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
+              placeholder="Person/ministry primarily responsible (optional)"
+            />
+          </Field>
+
+          <Field label="Location">
+            <input
+              className="input"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              placeholder="e.g. Main Sanctuary, Storage Room (optional)"
+            />
+          </Field>
+
+          <Field label="Purchase Date">
+            <input
+              type="date"
+              className="input"
+              value={form.purchaseDate}
+              onChange={(e) => setForm({ ...form, purchaseDate: e.target.value })}
+            />
+          </Field>
+
+          <Field label="Status">
+            <select
+              className="input"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as EquipmentStatus })}
+            >
+              {EQUIPMENT_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Status Details">
+            <textarea
+              className="input min-h-[70px]"
+              value={form.statusDetails}
+              onChange={(e) => setForm({ ...form, statusDetails: e.target.value })}
+              placeholder="Notes, e.g. cracked casing, needs new battery..."
+            />
+          </Field>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 px-5 py-4 border-t border-slate-200">
+          <div>
+            {initial && onDelete && (
+              <button type="button" className="text-sm text-red-600 hover:underline" onClick={() => onDelete(initial)}>
+                Delete
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className="btn-primary">
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+        </form>
+      </div>
+    </>
+  );
+}
+
+function blankForm(initial?: Equipment): NewEquipment {
+  return {
+    category: initial?.category ?? '',
+    inventoryCode: initial?.inventoryCode ?? '',
+    item: initial?.item ?? '',
+    assignedTo: initial?.assignedTo ?? '',
+    location: initial?.location ?? '',
+    purchaseDate: initial?.purchaseDate ?? '',
+    status: initial?.status ?? 'Good Condition',
+    statusDetails: initial?.statusDetails ?? '',
+  };
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-slate-700 mb-1">{label}</span>
+      {children}
+    </label>
+  );
+}
