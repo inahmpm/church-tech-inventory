@@ -26,16 +26,37 @@ export default function Requests() {
     <div className="space-y-4">
       <h1 className="text-xl font-semibold text-slate-800">Borrow Requests</h1>
 
-      <div className="card p-0 overflow-x-auto">
+      {/* Mobile card list */}
+      <div className="space-y-2 sm:hidden">
+        {requests.map((r) => (
+          <div key={r.id} className="card p-3 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-slate-800">{r.name}</span>
+              <span className="text-xs text-slate-400">{r.items.length} scanned</span>
+            </div>
+            <div className="text-xs text-slate-500">{r.ministry} · {r.venue}</div>
+            <div className="text-xs text-slate-500">{r.contactNo}</div>
+            <div className="text-xs text-slate-500 truncate">Requested: {r.equipmentRequested}</div>
+            <div className="text-xs text-slate-400">{new Date(r.submittedAt).toLocaleString()}</div>
+            <button className="text-indigo-600 hover:underline text-xs pt-1" onClick={() => setOpen(r)}>
+              {r.items.length ? 'Manage scan' : 'Scan equipment'}
+            </button>
+          </div>
+        ))}
+        {requests.length === 0 && <div className="text-center text-slate-400 py-8">No pending or in-progress requests.</div>}
+      </div>
+
+      {/* Desktop / tablet table */}
+      <div className="card p-0 overflow-x-auto hidden sm:block">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-slate-500 text-left">
             <tr>
               <Th>Submitted</Th>
               <Th>Name</Th>
-              <Th>Ministry</Th>
-              <Th>Contact No.</Th>
-              <Th>Venue</Th>
-              <Th>Requested Equipment</Th>
+              <Th className="hidden lg:table-cell">Ministry</Th>
+              <Th className="hidden lg:table-cell">Contact No.</Th>
+              <Th className="hidden md:table-cell">Venue</Th>
+              <Th className="hidden xl:table-cell">Requested Equipment</Th>
               <Th>Items Scanned</Th>
               <Th></Th>
             </tr>
@@ -45,10 +66,10 @@ export default function Requests() {
               <tr key={r.id} className="hover:bg-slate-50">
                 <Td>{new Date(r.submittedAt).toLocaleString()}</Td>
                 <Td>{r.name}</Td>
-                <Td>{r.ministry}</Td>
-                <Td>{r.contactNo}</Td>
-                <Td>{r.venue}</Td>
-                <Td className="max-w-xs truncate" title={r.equipmentRequested}>
+                <Td className="hidden lg:table-cell">{r.ministry}</Td>
+                <Td className="hidden lg:table-cell">{r.contactNo}</Td>
+                <Td className="hidden md:table-cell">{r.venue}</Td>
+                <Td className="hidden xl:table-cell max-w-xs truncate" title={r.equipmentRequested}>
                   {r.equipmentRequested}
                 </Td>
                 <Td>{r.items.length}</Td>
@@ -163,8 +184,8 @@ function ScanPanel({ request, onClose }: { request: BorrowRequest; onClose: () =
   );
 }
 
-function Th({ children }: { children?: React.ReactNode }) {
-  return <th className="px-4 py-3 font-medium">{children}</th>;
+function Th({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
+  return <th className={`px-4 py-3 font-medium ${className}`}>{children}</th>;
 }
 function Td({ children, className = '', title }: { children: React.ReactNode; className?: string; title?: string }) {
   return (
