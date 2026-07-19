@@ -1,21 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useAuth } from '../../lib/useAuth';
-
-const navItems = [
-  { to: '/admin', label: 'Dashboard', end: true },
-  { to: '/admin/inventory', label: 'Inventory' },
-  { to: '/admin/requests', label: 'Borrow Requests' },
-  { to: '/admin/active', label: 'Active Borrows' },
-  { to: '/admin/history', label: 'Return History' },
-];
+import { subscribeBorrowRequests } from '../../lib/borrowRequests';
+import type { BorrowRequest } from '../../types';
 
 export default function AdminLayout() {
   const user = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [requests, setRequests] = useState<BorrowRequest[]>([]);
+  const [active, setActive] = useState<BorrowRequest[]>([]);
+
+  useEffect(() => subscribeBorrowRequests(['pending', 'borrowed'], setRequests), []);
+  useEffect(() => subscribeBorrowRequests(['borrowed'], setActive), []);
+
+  const pendingCount = requests.filter((r) => !r.fulfilledAt).length;
+  const activeCount = active.filter((r) => r.fulfilledAt).length;
+
+  const navItems = [
+    { to: '/admin', label: 'Dashboard', end: true },
+    { to: '/admin/inventory', label: 'Inventory' },
+    { to: '/admin/requests', label: 'Borrow Requests', count: pendingCount },
+    { to: '/admin/active', label: 'Active Borrows', count: activeCount },
+    { to: '/admin/history', label: 'Return History' },
+  ];
 
   if (user === undefined) {
     return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
@@ -79,12 +89,17 @@ export default function AdminLayout() {
               end={item.end}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
-                `block px-3 py-2 rounded-lg text-sm font-medium ${
+                `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium ${
                   isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-100'
                 }`
               }
             >
-              {item.label}
+              <span>{item.label}</span>
+              {!!item.count && (
+                <span className="ml-2 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary-600 text-white text-xs font-semibold flex items-center justify-center">
+                  {item.count}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
