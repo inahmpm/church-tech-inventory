@@ -9,6 +9,7 @@ import {
   updateDoc,
   where,
   getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Equipment, NewEquipment } from '../types';
@@ -38,6 +39,14 @@ export async function updateEquipment(id: string, data: Partial<NewEquipment>) {
 
 export async function deleteEquipment(id: string) {
   await deleteDoc(doc(db, 'equipment', id));
+}
+
+export async function deleteEquipmentBulk(ids: string[]) {
+  const batch = writeBatch(db);
+  for (const id of ids) {
+    batch.delete(doc(db, 'equipment', id));
+  }
+  await batch.commit();
 }
 
 export async function findEquipmentByCode(inventoryCode: string): Promise<Equipment | null> {
