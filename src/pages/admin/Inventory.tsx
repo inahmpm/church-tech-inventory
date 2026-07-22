@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createEquipment, deleteEquipment, subscribeEquipment, updateEquipment } from '../../lib/equipment';
+import {
+  createEquipment,
+  deleteEquipment,
+  deleteEquipmentBulk,
+  subscribeEquipment,
+  updateEquipment,
+} from '../../lib/equipment';
 import { EQUIPMENT_STATUSES } from '../../types';
 import type { Equipment, NewEquipment } from '../../types';
 import EquipmentPanel from '../../components/EquipmentPanel';
@@ -35,6 +41,7 @@ export default function Inventory() {
   const [sortKey, setSortKey] = useState<SortKey>('category');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => subscribeEquipment(setEquipment), []);
@@ -88,6 +95,37 @@ export default function Inventory() {
   const currentPage = Math.min(page, totalPages);
   const paged = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const validIds = new Set(equipment.map((e) => e.id));
+      const next = new Set([...prev].filter((id) => validIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [equipment]);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const pageAllSelected = paged.length > 0 && paged.every((e) => selectedIds.has(e.id));
+
+  function togglePageSelected() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) {
+        paged.forEach((e) => next.delete(e.id));
+      } else {
+        paged.forEach((e) => next.add(e.id));
+      }
+      return next;
+    });
+  }
+
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -122,11 +160,36 @@ export default function Inventory() {
     }
   }
 
+  async function handleBulkDelete() {
+    const selectedItems = equipment.filter((e) => selectedIds.has(e.id));
+    const borrowed = selectedItems.filter((e) => e.isBorrowed);
+    const deletable = selectedItems.filter((e) => !e.isBorrowed);
+
+    if (deletable.length === 0) {
+      alert('The selected item(s) are currently borrowed and cannot be deleted.');
+      return;
+    }
+
+    const warning =
+      borrowed.length > 0
+        ? `${borrowed.length} of the selected items are currently borrowed and will be skipped. `
+        : '';
+    if (!confirm(`${warning}Delete ${deletable.length} item(s)? This cannot be undone.`)) return;
+
+    await deleteEquipmentBulk(deletable.map((e) => e.id));
+    setSelectedIds(new Set());
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-slate-800">Equipment Inventory</h1>
         <div className="flex flex-wrap gap-2">
+          {selectedIds.size > 0 && (
+            <button className="btn-secondary whitespace-nowrap text-red-600" onClick={handleBulkDelete}>
+              Delete Selected ({selectedIds.size})
+            </button>
+          )}
           <input
             className="input w-full sm:w-64"
             placeholder="Search inventory..."
@@ -209,7 +272,16 @@ export default function Inventory() {
               className={`card p-3 space-y-1 cursor-pointer ${isSelected ? 'ring-2 ring-primary-400' : ''}`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-medium text-slate-800">{e.item}</span>
+                <span className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={selectedIds.has(e.id)}
+                    onClick={(ev) => ev.stopPropagation()}
+                    onChange={() => toggleSelected(e.id)}
+                  />
+                  <span className="font-medium text-slate-800">{e.item}</span>
+                </span>
                 <StatusBadge status={e.status} />
               </div>
               <div className="text-xs text-slate-500 font-mono">{e.inventoryCode}</div>
@@ -232,6 +304,14 @@ export default function Inventory() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-slate-500 text-left">
             <tr>
+              <Th>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={pageAllSelected}
+                  onChange={togglePageSelected}
+                />
+              </Th>
               {COLUMNS.map((col) => (
                 <Th key={col.key} className={col.className} onClick={() => toggleSort(col.key)}>
                   <span className="inline-flex items-center gap-1">
@@ -252,6 +332,15 @@ export default function Inventory() {
                   onClick={() => setSelected(e)}
                   className={`cursor-pointer hover:bg-slate-50 ${isSelected ? 'bg-primary-50' : ''}`}
                 >
+                  <Td>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={selectedIds.has(e.id)}
+                      onClick={(ev) => ev.stopPropagation()}
+                      onChange={() => toggleSelected(e.id)}
+                    />
+                  </Td>
                   <Td>{e.category}</Td>
                   <Td className="font-mono">{e.inventoryCode}</Td>
                   <Td>{e.item}</Td>
@@ -276,7 +365,7 @@ export default function Inventory() {
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={9} className="text-center text-slate-400 py-8">
+                <td colSpan={10} className="text-center text-slate-400 py-8">
                   No equipment found.
                 </td>
               </tr>
