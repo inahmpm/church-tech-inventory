@@ -12,42 +12,68 @@ export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [subcategoryDrafts, setSubcategoryDrafts] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => subscribeCategories(setCategories), []);
 
   async function handleAddCategory(e: FormEvent) {
     e.preventDefault();
+    setError(null);
     const name = newCategory.trim();
     if (!name) return;
     if (categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
       alert(`"${name}" already exists.`);
       return;
     }
-    await createCategory(name);
-    setNewCategory('');
+    try {
+      await createCategory(name);
+      setNewCategory('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add category.');
+    }
   }
 
   async function handleDeleteCategory(c: Category) {
-    if (confirm(`Delete category "${c.name}" and all its subcategories? This cannot be undone.`)) {
+    if (!confirm(`Delete category "${c.name}" and all its subcategories? This cannot be undone.`)) return;
+    setError(null);
+    try {
       await deleteCategory(c.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete category.');
     }
   }
 
   async function handleAddSubcategory(c: Category, e: FormEvent) {
     e.preventDefault();
+    setError(null);
     const draft = (subcategoryDrafts[c.id] ?? '').trim();
     if (!draft) return;
     if (c.subcategories.some((s) => s.toLowerCase() === draft.toLowerCase())) {
       alert(`"${draft}" already exists under "${c.name}".`);
       return;
     }
-    await addSubcategory(c.id, draft);
-    setSubcategoryDrafts((prev) => ({ ...prev, [c.id]: '' }));
+    try {
+      await addSubcategory(c.id, draft);
+      setSubcategoryDrafts((prev) => ({ ...prev, [c.id]: '' }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add subcategory.');
+    }
+  }
+
+  async function handleRemoveSubcategory(c: Category, s: string) {
+    setError(null);
+    try {
+      await removeSubcategory(c.id, s);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove subcategory.');
+    }
   }
 
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold text-slate-800">Categories</h1>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <form onSubmit={handleAddCategory} className="card flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
@@ -80,7 +106,7 @@ export default function Categories() {
                   {s}
                   <button
                     className="text-slate-400 hover:text-red-600 leading-none"
-                    onClick={() => removeSubcategory(c.id, s)}
+                    onClick={() => handleRemoveSubcategory(c, s)}
                     aria-label={`Remove ${s}`}
                   >
                     &times;
