@@ -49,8 +49,8 @@ function parseRows(text: string): ParsedRow[] {
     const category = get('category');
     const inventoryCode = get('inventoryCode');
     const item = get('item');
-    if (!category || !inventoryCode || !item) {
-      return { line, data: null, error: 'Missing required field (Category, Inventory Code, or Item).' };
+    if (!item) {
+      return { line, data: null, error: 'Missing required field (Item).' };
     }
 
     const statusRaw = get('status');
@@ -127,8 +127,8 @@ export default function ImportInventoryModal({ onClose }: { onClose: () => void 
         <h2 className="font-semibold text-slate-800 text-lg">Import Inventory</h2>
         <p className="text-sm text-slate-500">
           Upload a CSV with columns: Category, Subcategory, Inventory Code, Item, Assigned Type, Assigned To,
-          Location, Purchase Date, Status, Status Details. Only Category, Inventory Code, and Item are required
-          (Assigned Type defaults to Borrowable).
+          Location, Purchase Date, Status, Status Details. Only Item is required (Assigned Type defaults to
+          Borrowable).
         </p>
 
         <input
