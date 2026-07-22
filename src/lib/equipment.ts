@@ -38,7 +38,7 @@ export async function createEquipment(data: NewEquipment) {
     item: data.item,
     action: 'created',
     details: `Added to inventory as ${data.assignedType}`,
-  });
+  }).catch((err) => console.error('Failed to log history for created equipment', err));
 }
 
 export async function updateEquipment(id: string, data: Partial<NewEquipment>) {
@@ -49,7 +49,7 @@ export async function updateEquipment(id: string, data: Partial<NewEquipment>) {
     item: data.item ?? '',
     action: 'updated',
     details: `Updated: ${Object.keys(data).join(', ')}`,
-  });
+  }).catch((err) => console.error('Failed to log history for updated equipment', err));
 }
 
 export async function deleteEquipment(id: string, equipment: Pick<Equipment, 'inventoryCode' | 'item'>) {
@@ -60,7 +60,7 @@ export async function deleteEquipment(id: string, equipment: Pick<Equipment, 'in
     item: equipment.item,
     action: 'deleted',
     details: 'Removed from inventory',
-  });
+  }).catch((err) => console.error('Failed to log history for deleted equipment', err));
 }
 
 export async function deleteEquipmentBulk(items: Pick<Equipment, 'id' | 'inventoryCode' | 'item'>[]) {
@@ -77,7 +77,7 @@ export async function deleteEquipmentBulk(items: Pick<Equipment, 'id' | 'invento
         item: item.item,
         action: 'deleted',
         details: 'Removed from inventory (bulk delete)',
-      }),
+      }).catch((err) => console.error('Failed to log history for bulk-deleted equipment', err)),
     ),
   );
 }
