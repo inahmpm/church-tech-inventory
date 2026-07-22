@@ -8,6 +8,9 @@ export const EQUIPMENT_STATUSES = [
 
 export type EquipmentStatus = (typeof EQUIPMENT_STATUSES)[number];
 
+export const ASSIGNED_TYPES = ['Borrowable', 'Fixed', 'Issued'] as const;
+export type AssignedType = (typeof ASSIGNED_TYPES)[number];
+
 export interface Category {
   id: string; // Firestore doc id
   name: string;
@@ -22,6 +25,7 @@ export interface Equipment {
   subcategory: string;
   inventoryCode: string; // unique barcode value
   item: string;
+  assignedType: AssignedType;
   assignedTo: string;
   location: string;
   purchaseDate: string; // yyyy-mm-dd
@@ -61,4 +65,26 @@ export interface BorrowRequest {
   submittedAt: number; // timestamp of form submission
   fulfilledAt: number | null; // timestamp scanning was completed / items handed out
   returnedAt: number | null; // timestamp items were returned
+}
+
+export const HISTORY_LOG_ACTIONS = [
+  'created',
+  'updated',
+  'deleted',
+  'borrowed',
+  'removed',
+  'handed_out',
+  'returned',
+] as const;
+export type HistoryLogAction = (typeof HISTORY_LOG_ACTIONS)[number];
+
+export interface HistoryLogEntry {
+  id: string;
+  equipmentId: string;
+  inventoryCode: string;
+  item: string;
+  action: HistoryLogAction;
+  details: string;
+  actor: string | null; // signed-in admin's email, if known
+  timestamp: number;
 }

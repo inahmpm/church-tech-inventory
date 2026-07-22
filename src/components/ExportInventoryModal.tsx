@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { EQUIPMENT_STATUSES } from '../types';
-import type { Equipment, EquipmentStatus } from '../types';
+import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
+import type { AssignedType, Equipment, EquipmentStatus } from '../types';
 import { downloadCsv, toCsv } from '../lib/csv';
 
 const AVAILABILITY_OPTIONS = ['All', 'Available', 'Borrowed'] as const;
@@ -11,6 +11,7 @@ const CSV_HEADERS = [
   'Subcategory',
   'Inventory Code',
   'Item',
+  'Assigned Type',
   'Assigned To',
   'Location',
   'Purchase Date',
@@ -33,6 +34,7 @@ export default function ExportInventoryModal({
 
   const [category, setCategory] = useState('All');
   const [status, setStatus] = useState<'All' | EquipmentStatus>('All');
+  const [assignedType, setAssignedType] = useState<'All' | AssignedType>('All');
   const [availability, setAvailability] = useState<Availability>('All');
   const [assignedTo, setAssignedTo] = useState('');
 
@@ -40,6 +42,7 @@ export default function ExportInventoryModal({
     return equipment.filter((e) => {
       if (category !== 'All' && e.category !== category) return false;
       if (status !== 'All' && e.status !== status) return false;
+      if (assignedType !== 'All' && e.assignedType !== assignedType) return false;
       if (availability === 'Available' && e.isBorrowed) return false;
       if (availability === 'Borrowed' && !e.isBorrowed) return false;
       if (assignedTo.trim() && !e.assignedTo.toLowerCase().includes(assignedTo.trim().toLowerCase())) {
@@ -47,7 +50,7 @@ export default function ExportInventoryModal({
       }
       return true;
     });
-  }, [equipment, category, status, availability, assignedTo]);
+  }, [equipment, category, status, assignedType, availability, assignedTo]);
 
   function handleExport() {
     const rows = filtered.map((e) => [
@@ -55,6 +58,7 @@ export default function ExportInventoryModal({
       e.subcategory,
       e.inventoryCode,
       e.item,
+      e.assignedType,
       e.assignedTo,
       e.location,
       e.purchaseDate,
@@ -94,6 +98,21 @@ export default function ExportInventoryModal({
             {EQUIPMENT_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Assigned Type">
+          <select
+            className="input"
+            value={assignedType}
+            onChange={(e) => setAssignedType(e.target.value as 'All' | AssignedType)}
+          >
+            <option value="All">All types</option>
+            {ASSIGNED_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
               </option>
             ))}
           </select>

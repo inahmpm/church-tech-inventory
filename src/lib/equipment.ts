@@ -12,6 +12,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { logHistory } from './historyLogs';
 import type { Equipment, NewEquipment } from '../types';
 
 const equipmentCol = collection(db, 'equipment');
@@ -24,29 +25,61 @@ export function subscribeEquipment(cb: (items: Equipment[]) => void) {
 }
 
 export async function createEquipment(data: NewEquipment) {
-  await addDoc(equipmentCol, {
+  const ref = await addDoc(equipmentCol, {
     ...data,
     isBorrowed: false,
     activeBorrowRequestId: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   });
+  await logHistory({
+    equipmentId: ref.id,
+    inventoryCode: data.inventoryCode,
+    item: data.item,
+    action: 'created',
+    details: `Added to inventory as ${data.assignedType}`,
+  });
 }
 
 export async function updateEquipment(id: string, data: Partial<NewEquipment>) {
   await updateDoc(doc(db, 'equipment', id), { ...data, updatedAt: Date.now() });
+  await logHistory({
+    equipmentId: id,
+    inventoryCode: data.inventoryCode ?? '',
+    item: data.item ?? '',
+    action: 'updated',
+    details: `Updated: ${Object.keys(data).join(', ')}`,
+  });
 }
 
-export async function deleteEquipment(id: string) {
+export async function deleteEquipment(id: string, equipment: Pick<Equipment, 'inventoryCode' | 'item'>) {
   await deleteDoc(doc(db, 'equipment', id));
+  await logHistory({
+    equipmentId: id,
+    inventoryCode: equipment.inventoryCode,
+    item: equipment.item,
+    action: 'deleted',
+    details: 'Removed from inventory',
+  });
 }
 
-export async function deleteEquipmentBulk(ids: string[]) {
+export async function deleteEquipmentBulk(items: Pick<Equipment, 'id' | 'inventoryCode' | 'item'>[]) {
   const batch = writeBatch(db);
-  for (const id of ids) {
-    batch.delete(doc(db, 'equipment', id));
+  for (const item of items) {
+    batch.delete(doc(db, 'equipment', item.id));
   }
   await batch.commit();
+  await Promise.all(
+    items.map((item) =>
+      logHistory({
+        equipmentId: item.id,
+        inventoryCode: item.inventoryCode,
+        item: item.item,
+        action: 'deleted',
+        details: 'Removed from inventory (bulk delete)',
+      }),
+    ),
+  );
 }
 
 export async function findEquipmentByCode(inventoryCode: string): Promise<Equipment | null> {

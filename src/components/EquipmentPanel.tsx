@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { EQUIPMENT_STATUSES } from '../types';
-import type { Category, Equipment, EquipmentStatus, NewEquipment } from '../types';
+import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
+import type { AssignedType, Category, Equipment, EquipmentStatus, NewEquipment } from '../types';
 import BarcodeLabel from './BarcodeLabel';
 
 export default function EquipmentPanel({
@@ -133,6 +133,26 @@ export default function EquipmentPanel({
             />
           </Field>
 
+          <Field label="Assigned Type">
+            <select
+              required
+              className="input"
+              value={form.assignedType}
+              onChange={(e) => setForm({ ...form, assignedType: e.target.value as AssignedType })}
+            >
+              {ASSIGNED_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-400">
+              {form.assignedType === 'Borrowable' && 'Can be scanned into a borrow request; tracks available/borrowed.'}
+              {form.assignedType === 'Fixed' && 'Installed in a fixed location — cannot be borrowed or scanned.'}
+              {form.assignedType === 'Issued' && 'Assigned to a person, but can be re-issued to someone else later.'}
+            </p>
+          </Field>
+
           <Field label="Assigned to">
             <input
               className="input"
@@ -215,6 +235,7 @@ function blankForm(initial?: Equipment): NewEquipment {
     subcategory: initial?.subcategory ?? '',
     inventoryCode: initial?.inventoryCode ?? '',
     item: initial?.item ?? '',
+    assignedType: initial?.assignedType ?? 'Borrowable',
     assignedTo: initial?.assignedTo ?? '',
     location: initial?.location ?? '',
     purchaseDate: initial?.purchaseDate ?? '',

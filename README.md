@@ -5,8 +5,12 @@ Equipment inventory + borrower workflow, built with React (Vite) + Firebase.
 ## What's included
 
 - **Public borrower form** at `/borrow` — anyone with the link can submit a request
-  (Name, Ministry, Contact No., Venue, Equipment to borrow). Submission time is stamped
-  automatically.
+  (Name, Email, Ministry, Contact No., Venue, Equipment to borrow). Submission time is
+  stamped automatically.
+- **Email notifications** (via the Firebase "Trigger Email" extension):
+  - New request submitted → email to the tech office.
+  - Request finalized (items handed out) → email to the borrower.
+  - Items returned → email to the borrower.
 - **Admin app** at `/admin` (requires sign-in):
   - **Dashboard** — totals, breakdown by status/category, currently borrowed count, latest
     pending requests.
@@ -36,6 +40,22 @@ Equipment inventory + borrower workflow, built with React (Vite) + Firebase.
    firebase use --add        # select your project
    firebase deploy --only firestore
    ```
+6. **Set up email notifications** — the app queues emails by writing to a `mail`
+   Firestore collection; the "Trigger Email" extension watches that collection and
+   sends via SMTP. This requires the **Blaze (pay-as-you-go)** plan (the extension
+   itself has no charge at this volume, but extensions require Blaze to install):
+   - In the Firebase console, upgrade the project to Blaze.
+   - Go to **Extensions → Install extension**, search for **"Trigger Email"**
+     (`firebase/firestore-send-email`), and install it.
+   - During setup, set:
+     - **SMTP connection URI** — from your email provider (e.g. a Gmail account with
+       an [app password](https://myaccount.google.com/apppasswords), or a
+       transactional provider like Resend/SendGrid's SMTP credentials).
+     - **Default FROM address** — who the emails appear to come from.
+     - **Mail collection** — leave as the default `mail`.
+   - The tech-office notification address is hardcoded in
+     [`src/lib/borrowRequests.ts`](src/lib/borrowRequests.ts) as `ADMIN_EMAIL`
+     (currently `cogtech.dasma@gmail.com`) — update it there if it changes.
 
 ## Run locally
 
