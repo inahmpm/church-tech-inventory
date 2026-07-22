@@ -7,8 +7,8 @@ import {
   updateEquipment,
 } from '../../lib/equipment';
 import { subscribeCategories } from '../../lib/categories';
-import { EQUIPMENT_STATUSES } from '../../types';
-import type { Category, Equipment, NewEquipment } from '../../types';
+import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../../types';
+import type { AssignedType, Category, Equipment, NewEquipment } from '../../types';
 import EquipmentPanel from '../../components/EquipmentPanel';
 import ImportInventoryModal from '../../components/ImportInventoryModal';
 import ExportInventoryModal from '../../components/ExportInventoryModal';
@@ -20,6 +20,7 @@ type SortKey =
   | 'subcategory'
   | 'inventoryCode'
   | 'item'
+  | 'assignedType'
   | 'assignedTo'
   | 'location'
   | 'purchaseDate'
@@ -32,12 +33,29 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'subcategory', label: 'Subcategory', className: 'hidden md:table-cell' },
   { key: 'inventoryCode', label: 'Inventory Code' },
   { key: 'item', label: 'Items' },
+  { key: 'assignedType', label: 'Assigned Type' },
   { key: 'assignedTo', label: 'Assigned to', className: 'hidden md:table-cell' },
   { key: 'location', label: 'Location', className: 'hidden lg:table-cell' },
   { key: 'purchaseDate', label: 'Purchase Date', className: 'hidden xl:table-cell' },
   { key: 'status', label: 'Status' },
   { key: 'availability', label: 'Availability', className: 'hidden sm:table-cell' },
 ];
+
+function availabilityLabel(e: Equipment) {
+  if (e.assignedType === 'Fixed') {
+    return <span className="text-slate-500 font-medium">Fixed — not borrowable</span>;
+  }
+  if (e.assignedType === 'Issued') {
+    return (
+      <span className="text-sky-600 font-medium">Issued{e.assignedTo ? ` to ${e.assignedTo}` : ''}</span>
+    );
+  }
+  return e.isBorrowed ? (
+    <span className="text-amber-600 font-medium">Borrowed</span>
+  ) : (
+    <span className="text-green-600 font-medium">Available</span>
+  );
+}
 
 export default function Inventory() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -49,6 +67,7 @@ export default function Inventory() {
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [assignedTypeFilter, setAssignedTypeFilter] = useState<'' | AssignedType>('');
   const [availabilityFilter, setAvailabilityFilter] = useState<'' | 'available' | 'borrowed'>('');
   const [sortKey, setSortKey] = useState<SortKey>('category');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -74,7 +93,9 @@ export default function Inventory() {
     [equipment],
   );
 
-  const activeFilterCount = [categoryFilter, statusFilter, availabilityFilter].filter(Boolean).length;
+  const activeFilterCount = [categoryFilter, statusFilter, assignedTypeFilter, availabilityFilter].filter(
+    Boolean,
+  ).length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -88,11 +109,12 @@ export default function Inventory() {
       }
       if (categoryFilter && e.category !== categoryFilter) return false;
       if (statusFilter && e.status !== statusFilter) return false;
-      if (availabilityFilter === 'available' && e.isBorrowed) return false;
-      if (availabilityFilter === 'borrowed' && !e.isBorrowed) return false;
+      if (assignedTypeFilter && e.assignedType !== assignedTypeFilter) return false;
+      if (availabilityFilter === 'available' && (e.assignedType !== 'Borrowable' || e.isBorrowed)) return false;
+      if (availabilityFilter === 'borrowed' && (e.assignedType !== 'Borrowable' || !e.isBorrowed)) return false;
       return true;
     });
-  }, [equipment, search, categoryFilter, statusFilter, availabilityFilter]);
+  }, [equipment, search, categoryFilter, statusFilter, assignedTypeFilter, availabilityFilter]);
 
   const sorted = useMemo(() => {
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -105,7 +127,7 @@ export default function Inventory() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, categoryFilter, statusFilter, availabilityFilter, sortKey, sortDir]);
+  }, [search, categoryFilter, statusFilter, assignedTypeFilter, availabilityFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -154,6 +176,7 @@ export default function Inventory() {
   function clearFilters() {
     setCategoryFilter('');
     setStatusFilter('');
+    setAssignedTypeFilter('');
     setAvailabilityFilter('');
   }
 
@@ -171,7 +194,7 @@ export default function Inventory() {
       return;
     }
     if (confirm(`Delete "${e.item}" (${e.inventoryCode})? This cannot be undone.`)) {
-      await deleteEquipment(e.id);
+      await deleteEquipment(e.id, e);
       setSelected(null);
     }
   }
@@ -192,7 +215,7 @@ export default function Inventory() {
         : '';
     if (!confirm(`${warning}Delete ${deletable.length} item(s)? This cannot be undone.`)) return;
 
-    await deleteEquipmentBulk(deletable.map((e) => e.id));
+    await deleteEquipmentBulk(deletable);
     setSelectedIds(new Set());
   }
 
@@ -242,6 +265,20 @@ export default function Inventory() {
                     {EQUIPMENT_STATUSES.map((s) => (
                       <option key={s} value={s}>
                         {s}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Assigned Type">
+                  <select
+                    className="input"
+                    value={assignedTypeFilter}
+                    onChange={(e) => setAssignedTypeFilter(e.target.value as '' | AssignedType)}
+                  >
+                    <option value="">All</option>
+                    {ASSIGNED_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
                       </option>
                     ))}
                   </select>
@@ -305,13 +342,8 @@ export default function Inventory() {
                 {e.category}
                 {e.subcategory ? ` / ${e.subcategory}` : ''}
               </div>
-              <div className="text-xs">
-                {e.isBorrowed ? (
-                  <span className="text-amber-600 font-medium">Borrowed</span>
-                ) : (
-                  <span className="text-green-600 font-medium">Available</span>
-                )}
-              </div>
+              <div className="text-xs text-slate-500">{e.assignedType}</div>
+              <div className="text-xs">{availabilityLabel(e)}</div>
             </div>
           );
         })}
@@ -364,19 +396,14 @@ export default function Inventory() {
                   <Td className="hidden md:table-cell">{e.subcategory || '—'}</Td>
                   <Td className="font-mono">{e.inventoryCode}</Td>
                   <Td>{e.item}</Td>
+                  <Td>{e.assignedType}</Td>
                   <Td className="hidden md:table-cell">{e.assignedTo || '—'}</Td>
                   <Td className="hidden lg:table-cell">{e.location || '—'}</Td>
                   <Td className="hidden xl:table-cell">{e.purchaseDate || '—'}</Td>
                   <Td>
                     <StatusBadge status={e.status} />
                   </Td>
-                  <Td className="hidden sm:table-cell">
-                    {e.isBorrowed ? (
-                      <span className="text-amber-600 font-medium">Borrowed</span>
-                    ) : (
-                      <span className="text-green-600 font-medium">Available</span>
-                    )}
-                  </Td>
+                  <Td className="hidden sm:table-cell">{availabilityLabel(e)}</Td>
                   <Td className="hidden xl:table-cell max-w-xs truncate" title={e.statusDetails}>
                     {e.statusDetails || '—'}
                   </Td>
@@ -385,7 +412,7 @@ export default function Inventory() {
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={11} className="text-center text-slate-400 py-8">
+                <td colSpan={12} className="text-center text-slate-400 py-8">
                   No equipment found.
                 </td>
               </tr>
@@ -440,6 +467,7 @@ export default function Inventory() {
 function sortValue(e: Equipment, key: SortKey): string {
   switch (key) {
     case 'availability':
+      if (e.assignedType !== 'Borrowable') return e.assignedType.toLowerCase();
       return e.isBorrowed ? 'borrowed' : 'available';
     default:
       return (e[key] || '').toLowerCase();

@@ -29,6 +29,15 @@ service cloud.firestore {
       allow read, update, delete: if isSignedIn();
     }
 
+    // History logs: an immutable audit trail of every inventory movement
+    // (created/updated/deleted/borrowed/removed/handed_out/returned). Only
+    // signed-in admins can read or write, and entries can never be edited or
+    // removed once written.
+    match /historyLogs/{logId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
     // Mail queue consumed by the "Trigger Email" extension. The public borrow form
     // can only queue a notification to the fixed tech-office address; signed-in
     // admins (finalizing/returning requests) can queue mail to any address.

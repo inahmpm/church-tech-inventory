@@ -25,6 +25,7 @@ export default function AdminLayout() {
     { to: '/admin/requests', label: 'Borrow Requests', count: pendingCount },
     { to: '/admin/active', label: 'Active Borrows', count: activeCount },
     { to: '/admin/history', label: 'Return History' },
+    { to: '/admin/logs', label: 'History Logs' },
     { to: '/admin/categories', label: 'Categories' },
   ];
 

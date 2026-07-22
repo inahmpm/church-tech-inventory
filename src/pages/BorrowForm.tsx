@@ -3,6 +3,7 @@ import { submitBorrowRequest } from '../lib/borrowRequests';
 
 const initialForm = {
   name: '',
+  email: '',
   ministry: '',
   contactNo: '',
   venue: '',
@@ -72,6 +73,17 @@ export default function BorrowForm() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Full name"
+            />
+          </Field>
+
+          <Field label="Email">
+            <input
+              required
+              type="email"
+              className="input"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="you@example.com"
             />
           </Field>
 

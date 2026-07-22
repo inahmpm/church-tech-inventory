@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
-import { EQUIPMENT_STATUSES } from '../types';
-import type { EquipmentStatus, NewEquipment } from '../types';
+import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
+import type { AssignedType, EquipmentStatus, NewEquipment } from '../types';
 import { parseCsv } from '../lib/csv';
 import { createEquipment } from '../lib/equipment';
 
@@ -16,6 +16,8 @@ const HEADER_ALIASES: Record<string, keyof NewEquipment> = {
   'inventory code': 'inventoryCode',
   inventorycode: 'inventoryCode',
   item: 'item',
+  'assigned type': 'assignedType',
+  assignedtype: 'assignedType',
   'assigned to': 'assignedTo',
   assignedto: 'assignedTo',
   location: 'location',
@@ -56,6 +58,11 @@ function parseRows(text: string): ParsedRow[] {
       ? (statusRaw as EquipmentStatus)
       : 'Good Condition';
 
+    const assignedTypeRaw = get('assignedType');
+    const assignedType = (ASSIGNED_TYPES as readonly string[]).includes(assignedTypeRaw)
+      ? (assignedTypeRaw as AssignedType)
+      : 'Borrowable';
+
     return {
       line,
       error: null,
@@ -64,6 +71,7 @@ function parseRows(text: string): ParsedRow[] {
         subcategory: get('subcategory'),
         inventoryCode: inventoryCode.toUpperCase(),
         item,
+        assignedType,
         assignedTo: get('assignedTo'),
         location: get('location'),
         purchaseDate: get('purchaseDate'),
@@ -118,8 +126,9 @@ export default function ImportInventoryModal({ onClose }: { onClose: () => void 
       <div className="card max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto">
         <h2 className="font-semibold text-slate-800 text-lg">Import Inventory</h2>
         <p className="text-sm text-slate-500">
-          Upload a CSV with columns: Category, Subcategory, Inventory Code, Item, Assigned To, Location, Purchase
-          Date, Status, Status Details. Only Category, Inventory Code, and Item are required.
+          Upload a CSV with columns: Category, Subcategory, Inventory Code, Item, Assigned Type, Assigned To,
+          Location, Purchase Date, Status, Status Details. Only Category, Inventory Code, and Item are required
+          (Assigned Type defaults to Borrowable).
         </p>
 
         <input
