@@ -1,16 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { EQUIPMENT_STATUSES } from '../types';
-import type { Equipment, EquipmentStatus, NewEquipment } from '../types';
+import type { Category, Equipment, EquipmentStatus, NewEquipment } from '../types';
 import BarcodeLabel from './BarcodeLabel';
 
 export default function EquipmentPanel({
   initial,
+  categories,
   open,
   onClose,
   onSubmit,
   onDelete,
 }: {
   initial?: Equipment;
+  categories: Category[];
   open: boolean;
   onClose: () => void;
   onSubmit: (data: NewEquipment) => Promise<void>;
@@ -26,6 +28,8 @@ export default function EquipmentPanel({
       setError(null);
     }
   }, [initial, open]);
+
+  const subcategoryOptions = categories.find((c) => c.name === form.category)?.subcategories ?? [];
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -70,13 +74,43 @@ export default function EquipmentPanel({
           )}
 
           <Field label="Category">
-            <input
+            <select
               required
               className="input"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              placeholder="e.g. Audio, Video, Networking, Consumables"
-            />
+              onChange={(e) => setForm({ ...form, category: e.target.value, subcategory: '' })}
+            >
+              <option value="" disabled>
+                Select a category...
+              </option>
+              {form.category && !categories.some((c) => c.name === form.category) && (
+                <option value={form.category}>{form.category}</option>
+              )}
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Subcategory">
+            <select
+              className="input"
+              value={form.subcategory}
+              onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+              disabled={!subcategoryOptions.length}
+            >
+              <option value="">None</option>
+              {form.subcategory && !subcategoryOptions.includes(form.subcategory) && (
+                <option value={form.subcategory}>{form.subcategory}</option>
+              )}
+              {subcategoryOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Inventory Code (barcode value)">
@@ -178,6 +212,7 @@ export default function EquipmentPanel({
 function blankForm(initial?: Equipment): NewEquipment {
   return {
     category: initial?.category ?? '',
+    subcategory: initial?.subcategory ?? '',
     inventoryCode: initial?.inventoryCode ?? '',
     item: initial?.item ?? '',
     assignedTo: initial?.assignedTo ?? '',

@@ -6,19 +6,30 @@ import {
   subscribeEquipment,
   updateEquipment,
 } from '../../lib/equipment';
+import { subscribeCategories } from '../../lib/categories';
 import { EQUIPMENT_STATUSES } from '../../types';
-import type { Equipment, NewEquipment } from '../../types';
+import type { Category, Equipment, NewEquipment } from '../../types';
 import EquipmentPanel from '../../components/EquipmentPanel';
 import ImportInventoryModal from '../../components/ImportInventoryModal';
 import ExportInventoryModal from '../../components/ExportInventoryModal';
 
 const PAGE_SIZE = 20;
 
-type SortKey = 'category' | 'inventoryCode' | 'item' | 'assignedTo' | 'location' | 'purchaseDate' | 'status' | 'availability';
+type SortKey =
+  | 'category'
+  | 'subcategory'
+  | 'inventoryCode'
+  | 'item'
+  | 'assignedTo'
+  | 'location'
+  | 'purchaseDate'
+  | 'status'
+  | 'availability';
 type SortDir = 'asc' | 'desc';
 
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'category', label: 'Category' },
+  { key: 'subcategory', label: 'Subcategory', className: 'hidden md:table-cell' },
   { key: 'inventoryCode', label: 'Inventory Code' },
   { key: 'item', label: 'Items' },
   { key: 'assignedTo', label: 'Assigned to', className: 'hidden md:table-cell' },
@@ -30,6 +41,7 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
 
 export default function Inventory() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Equipment | 'new' | null>(null);
   const [importing, setImporting] = useState(false);
@@ -45,6 +57,7 @@ export default function Inventory() {
   const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => subscribeEquipment(setEquipment), []);
+  useEffect(() => subscribeCategories(setCategories), []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -56,7 +69,10 @@ export default function Inventory() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showFilters]);
 
-  const categories = useMemo(() => Array.from(new Set(equipment.map((e) => e.category))).sort(), [equipment]);
+  const categoryFilterOptions = useMemo(
+    () => Array.from(new Set(equipment.map((e) => e.category))).sort(),
+    [equipment],
+  );
 
   const activeFilterCount = [categoryFilter, statusFilter, availabilityFilter].filter(Boolean).length;
 
@@ -64,7 +80,7 @@ export default function Inventory() {
     const q = search.trim().toLowerCase();
     return equipment.filter((e) => {
       if (q) {
-        const matches = [e.category, e.inventoryCode, e.item, e.assignedTo, e.location, e.status]
+        const matches = [e.category, e.subcategory, e.inventoryCode, e.item, e.assignedTo, e.location, e.status]
           .join(' ')
           .toLowerCase()
           .includes(q);
@@ -213,7 +229,7 @@ export default function Inventory() {
                 <Field label="Category">
                   <select className="input" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                     <option value="">All</option>
-                    {categories.map((c) => (
+                    {categoryFilterOptions.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>
@@ -285,7 +301,10 @@ export default function Inventory() {
                 <StatusBadge status={e.status} />
               </div>
               <div className="text-xs text-slate-500 font-mono">{e.inventoryCode}</div>
-              <div className="text-xs text-slate-500">{e.category}</div>
+              <div className="text-xs text-slate-500">
+                {e.category}
+                {e.subcategory ? ` / ${e.subcategory}` : ''}
+              </div>
               <div className="text-xs">
                 {e.isBorrowed ? (
                   <span className="text-amber-600 font-medium">Borrowed</span>
@@ -342,6 +361,7 @@ export default function Inventory() {
                     />
                   </Td>
                   <Td>{e.category}</Td>
+                  <Td className="hidden md:table-cell">{e.subcategory || '—'}</Td>
                   <Td className="font-mono">{e.inventoryCode}</Td>
                   <Td>{e.item}</Td>
                   <Td className="hidden md:table-cell">{e.assignedTo || '—'}</Td>
@@ -365,7 +385,7 @@ export default function Inventory() {
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={10} className="text-center text-slate-400 py-8">
+                <td colSpan={11} className="text-center text-slate-400 py-8">
                   No equipment found.
                 </td>
               </tr>
@@ -403,6 +423,7 @@ export default function Inventory() {
 
       <EquipmentPanel
         open={selected !== null}
+        categories={categories}
         initial={selected === 'new' || selected === null ? undefined : selected}
         onClose={() => setSelected(null)}
         onSubmit={handleSave}

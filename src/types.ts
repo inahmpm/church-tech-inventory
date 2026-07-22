@@ -8,9 +8,18 @@ export const EQUIPMENT_STATUSES = [
 
 export type EquipmentStatus = (typeof EQUIPMENT_STATUSES)[number];
 
+export interface Category {
+  id: string; // Firestore doc id
+  name: string;
+  subcategories: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface Equipment {
   id: string; // Firestore doc id
   category: string;
+  subcategory: string;
   inventoryCode: string; // unique barcode value
   item: string;
   assignedTo: string;
@@ -42,6 +51,7 @@ export interface BorrowedItem {
 export interface BorrowRequest {
   id: string;
   name: string;
+  email: string;
   ministry: string;
   contactNo: string;
   venue: string;

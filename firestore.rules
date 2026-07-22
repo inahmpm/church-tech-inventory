@@ -12,15 +12,31 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    // Categories/subcategories used to classify equipment: only signed-in tech
+    // support admins can read/write.
+    match /categories/{categoryId} {
+      allow read, write: if isSignedIn();
+    }
+
     // Borrow requests: the public can create a request (the borrower's form),
     // but only admins can read the list, update it (scanning/finalizing/returning),
     // or delete it. This keeps other borrowers' names/contact numbers private.
     match /borrowRequests/{requestId} {
       allow create: if request.resource.data.keys().hasAll(
-        ['name', 'ministry', 'contactNo', 'venue', 'equipmentRequested', 'status', 'items', 'submittedAt']
+        ['name', 'email', 'ministry', 'contactNo', 'venue', 'equipmentRequested', 'status', 'items', 'submittedAt']
       ) && request.resource.data.status == 'pending'
         && request.resource.data.items.size() == 0;
       allow read, update, delete: if isSignedIn();
+    }
+
+    // Mail queue consumed by the "Trigger Email" extension. The public borrow form
+    // can only queue a notification to the fixed tech-office address; signed-in
+    // admins (finalizing/returning requests) can queue mail to any address.
+    // No one can read/update/delete — only the extension's service account touches
+    // these docs after creation, which bypasses these rules.
+    match /mail/{mailId} {
+      allow create: if isSignedIn() || request.resource.data.to == 'cogtech.dasma@gmail.com';
+      allow read, update, delete: if false;
     }
   }
 }
