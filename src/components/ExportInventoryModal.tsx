@@ -8,6 +8,7 @@ type Availability = (typeof AVAILABILITY_OPTIONS)[number];
 
 const CSV_HEADERS = [
   'Category',
+  'Subcategory',
   'Inventory Code',
   'Item',
   'Assigned To',
@@ -51,6 +52,7 @@ export default function ExportInventoryModal({
   function handleExport() {
     const rows = filtered.map((e) => [
       e.category,
+      e.subcategory,
       e.inventoryCode,
       e.item,
       e.assignedTo,
