@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { createMinistry, subscribeMinistries } from '../../lib/ministries';
+import { createMinistry, subscribeMinistries, updateMinistry } from '../../lib/ministries';
 import { createUserInMinistry } from '../../lib/users';
 import type { Ministry } from '../../types';
 
@@ -26,6 +26,12 @@ export default function Ministries() {
   const [created, setCreated] = useState<{ ministryName: string; adminEmail: string; tempPassword: string } | null>(
     null,
   );
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPrefix, setEditPrefix] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => subscribeMinistries(setMinistries), []);
 
@@ -65,6 +71,44 @@ export default function Ministries() {
       setError(err instanceof Error ? err.message : 'Failed to create ministry.');
     } finally {
       setCreating(false);
+    }
+  }
+
+  function startEdit(m: Ministry) {
+    setError(null);
+    setEditingId(m.id);
+    setEditName(m.name);
+    setEditPrefix(m.inventoryCodePrefix);
+    setEditEmail(m.notificationEmail);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function handleSaveEdit(e: FormEvent) {
+    e.preventDefault();
+    if (!editingId) return;
+    setError(null);
+    const trimmedName = editName.trim();
+    const trimmedPrefix = editPrefix.trim().toUpperCase();
+    const trimmedEmail = editEmail.trim();
+    if (!trimmedName || !trimmedPrefix || !trimmedEmail) {
+      setError('All fields are required.');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await updateMinistry(editingId, {
+        name: trimmedName,
+        inventoryCodePrefix: trimmedPrefix,
+        notificationEmail: trimmedEmail,
+      });
+      setEditingId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update ministry.');
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -126,16 +170,51 @@ export default function Ministries() {
       </form>
 
       <div className="space-y-3">
-        {ministries.map((m) => (
-          <div key={m.id} className="card flex items-center justify-between">
-            <div>
-              <h2 className="font-medium text-slate-800">{m.name}</h2>
-              <p className="text-sm text-slate-500">
-                /borrow/{m.slug} &middot; prefix {m.inventoryCodePrefix} &middot; {m.notificationEmail}
-              </p>
+        {ministries.map((m) =>
+          editingId === m.id ? (
+            <form key={m.id} onSubmit={handleSaveEdit} className="card space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="block text-sm font-medium text-slate-700 mb-1">Ministry name</span>
+                  <input className="input" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                </label>
+                <label className="block">
+                  <span className="block text-sm font-medium text-slate-700 mb-1">Inventory code prefix</span>
+                  <input className="input" value={editPrefix} onChange={(e) => setEditPrefix(e.target.value)} />
+                </label>
+                <label className="block sm:col-span-2">
+                  <span className="block text-sm font-medium text-slate-700 mb-1">Notification email</span>
+                  <input
+                    type="email"
+                    className="input"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" disabled={savingEdit} className="btn-primary whitespace-nowrap">
+                  {savingEdit ? 'Saving...' : 'Save'}
+                </button>
+                <button type="button" onClick={cancelEdit} className="btn-secondary whitespace-nowrap">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div key={m.id} className="card flex items-center justify-between">
+              <div>
+                <h2 className="font-medium text-slate-800">{m.name}</h2>
+                <p className="text-sm text-slate-500">
+                  /borrow/{m.slug} &middot; prefix {m.inventoryCodePrefix} &middot; {m.notificationEmail}
+                </p>
+              </div>
+              <button className="text-sm text-primary-600 hover:underline" onClick={() => startEdit(m)}>
+                Edit
+              </button>
             </div>
-          </div>
-        ))}
+          ),
+        )}
         {ministries.length === 0 && <div className="text-center text-slate-400 py-8">No ministries yet.</div>}
       </div>
     </div>

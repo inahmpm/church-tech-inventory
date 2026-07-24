@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useCurrentUser } from '../../lib/useCurrentUser';
-import { createUserInMinistry, setUserActive, subscribeMinistryUsers } from '../../lib/users';
+import { createUserInMinistry, setUserActive, setUserRole, subscribeMinistryUsers } from '../../lib/users';
 import type { AppUser, UserRole } from '../../types';
 
 function generateTempPassword() {
@@ -15,6 +15,9 @@ export default function Users() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [editingUid, setEditingUid] = useState<string | null>(null);
+  const [editRole, setEditRole] = useState<UserRole>('member');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const ministryId = profile?.ministryId;
 
@@ -50,6 +53,29 @@ export default function Users() {
       await setUserActive(u.uid, !u.active);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update user.');
+    }
+  }
+
+  function startEdit(u: AppUser) {
+    setError(null);
+    setEditingUid(u.uid);
+    setEditRole(u.role);
+  }
+
+  function cancelEdit() {
+    setEditingUid(null);
+  }
+
+  async function handleSaveEdit(uid: string) {
+    setError(null);
+    setSavingEdit(true);
+    try {
+      await setUserRole(uid, editRole);
+      setEditingUid(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update user.');
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -96,22 +122,59 @@ export default function Users() {
       </form>
 
       <div className="space-y-2">
-        {users.map((u) => (
-          <div key={u.uid} className="card flex items-center justify-between">
-            <div>
-              <p className="font-medium text-slate-800">{u.email}</p>
-              <p className="text-sm text-slate-500">
-                {u.role} &middot; {u.active ? 'Active' : 'Disabled'}
-              </p>
+        {users.map((u) =>
+          editingUid === u.uid ? (
+            <div key={u.uid} className="card flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="font-medium text-slate-800">{u.email}</p>
+              </div>
+              <label className="block">
+                <span className="block text-sm font-medium text-slate-700 mb-1">Role</span>
+                <select
+                  className="input"
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value as UserRole)}
+                >
+                  <option value="member">Member</option>
+                  <option value="ministry-admin">Ministry Admin</option>
+                  {profile?.role === 'super-admin' && <option value="super-admin">Super Admin</option>}
+                </select>
+              </label>
+              <div className="flex gap-2">
+                <button
+                  className="btn-primary whitespace-nowrap"
+                  disabled={savingEdit}
+                  onClick={() => handleSaveEdit(u.uid)}
+                >
+                  {savingEdit ? 'Saving...' : 'Save'}
+                </button>
+                <button type="button" className="btn-secondary whitespace-nowrap" onClick={cancelEdit}>
+                  Cancel
+                </button>
+              </div>
             </div>
-            <button
-              className={`text-sm hover:underline ${u.active ? 'text-red-600' : 'text-primary-600'}`}
-              onClick={() => handleToggleActive(u)}
-            >
-              {u.active ? 'Disable' : 'Re-enable'}
-            </button>
-          </div>
-        ))}
+          ) : (
+            <div key={u.uid} className="card flex items-center justify-between">
+              <div>
+                <p className="font-medium text-slate-800">{u.email}</p>
+                <p className="text-sm text-slate-500">
+                  {u.role} &middot; {u.active ? 'Active' : 'Disabled'}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <button className="text-sm text-primary-600 hover:underline" onClick={() => startEdit(u)}>
+                  Edit
+                </button>
+                <button
+                  className={`text-sm hover:underline ${u.active ? 'text-red-600' : 'text-primary-600'}`}
+                  onClick={() => handleToggleActive(u)}
+                >
+                  {u.active ? 'Disable' : 'Re-enable'}
+                </button>
+              </div>
+            </div>
+          ),
+        )}
         {users.length === 0 && <div className="text-center text-slate-400 py-8">No users yet.</div>}
       </div>
     </div>
