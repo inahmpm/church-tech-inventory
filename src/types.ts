@@ -25,6 +25,7 @@ export interface Equipment {
   subcategory: string;
   inventoryCode: string; // unique barcode value
   item: string;
+  serialNumber: string;
   assignedType: AssignedType;
   assignedTo: string;
   location: string;

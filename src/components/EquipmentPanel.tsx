@@ -133,6 +133,15 @@ export default function EquipmentPanel({
             />
           </Field>
 
+          <Field label="Serial Number">
+            <input
+              className="input"
+              value={form.serialNumber}
+              onChange={(e) => setForm({ ...form, serialNumber: e.target.value })}
+              placeholder="Manufacturer serial number (optional)"
+            />
+          </Field>
+
           <Field label="Assigned Type">
             <select
               required
@@ -235,6 +244,7 @@ function blankForm(initial?: Equipment): NewEquipment {
     subcategory: initial?.subcategory ?? '',
     inventoryCode: initial?.inventoryCode ?? '',
     item: initial?.item ?? '',
+    serialNumber: initial?.serialNumber ?? '',
     assignedType: initial?.assignedType ?? 'Borrowable',
     assignedTo: initial?.assignedTo ?? '',
     location: initial?.location ?? '',
