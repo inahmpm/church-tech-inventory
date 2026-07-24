@@ -492,6 +492,7 @@ export default function Inventory() {
         open={selected !== null}
         categories={categories}
         initial={selected === 'new' || selected === null ? undefined : selected}
+        existingCodes={equipment.map((e) => e.inventoryCode)}
         onClose={() => setSelected(null)}
         onSubmit={handleSave}
         onDelete={handleDelete}
