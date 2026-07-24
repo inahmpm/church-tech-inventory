@@ -1,18 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { subscribeEquipment } from '../../lib/equipment';
 import { subscribeBorrowRequests } from '../../lib/borrowRequests';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import type { BorrowRequest, Equipment } from '../../types';
 import { EQUIPMENT_STATUSES } from '../../types';
 
 export default function Dashboard() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [pending, setPending] = useState<BorrowRequest[]>([]);
   const [active, setActive] = useState<BorrowRequest[]>([]);
   const [subCategoryFilter, setSubCategoryFilter] = useState('');
 
-  useEffect(() => subscribeEquipment(setEquipment), []);
-  useEffect(() => subscribeBorrowRequests(['pending'], setPending), []);
-  useEffect(() => subscribeBorrowRequests(['borrowed'], setActive), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeEquipment(ministryId, setEquipment);
+  }, [ministryId]);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['pending'], setPending, ministryId);
+  }, [ministryId]);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['borrowed'], setActive, ministryId);
+  }, [ministryId]);
 
   const byStatus = useMemo(() => {
     const map = new Map<string, number>();

@@ -11,8 +11,31 @@ export type EquipmentStatus = (typeof EQUIPMENT_STATUSES)[number];
 export const ASSIGNED_TYPES = ['Borrowable', 'Fixed', 'Issued'] as const;
 export type AssignedType = (typeof ASSIGNED_TYPES)[number];
 
+export type UserRole = 'super-admin' | 'ministry-admin' | 'member';
+
+export interface Ministry {
+  id: string; // Firestore doc id
+  name: string;
+  slug: string; // used in /borrow/:slug
+  inventoryCodePrefix: string; // e.g. "TECH", "AV", "MUSIC"
+  notificationEmail: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface AppUser {
+  uid: string; // Firestore doc id, matches Firebase Auth uid
+  email: string;
+  ministryId: string;
+  role: UserRole;
+  active: boolean; // soft-disable, since Auth accounts can't be deleted client-side
+  mustChangePassword: boolean;
+  createdAt: number;
+}
+
 export interface Category {
   id: string; // Firestore doc id
+  ministryId: string;
   name: string;
   subcategories: string[];
   createdAt: number;
@@ -21,6 +44,7 @@ export interface Category {
 
 export interface Equipment {
   id: string; // Firestore doc id
+  ministryId: string;
   category: string;
   subcategory: string;
   inventoryCode: string; // unique barcode value
@@ -55,6 +79,7 @@ export interface BorrowedItem {
 
 export interface BorrowRequest {
   id: string;
+  ministryId: string;
   name: string;
   email: string;
   ministry: string;
@@ -81,6 +106,7 @@ export type HistoryLogAction = (typeof HISTORY_LOG_ACTIONS)[number];
 
 export interface HistoryLogEntry {
   id: string;
+  ministryId: string;
   equipmentId: string;
   inventoryCode: string;
   item: string;

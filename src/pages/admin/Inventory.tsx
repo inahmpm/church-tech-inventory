@@ -7,7 +7,10 @@ import {
   updateEquipment,
 } from '../../lib/equipment';
 import { subscribeCategories } from '../../lib/categories';
+import { useCurrentUser } from '../../lib/useCurrentUser';
+import { getMinistry } from '../../lib/ministries';
 import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../../types';
+import type { Ministry } from '../../types';
 import type { AssignedType, Category, Equipment, NewEquipment } from '../../types';
 import EquipmentPanel from '../../components/EquipmentPanel';
 import ImportInventoryModal from '../../components/ImportInventoryModal';
@@ -60,6 +63,9 @@ function availabilityLabel(e: Equipment) {
 }
 
 export default function Inventory() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
+  const [ministry, setMinistry] = useState<Ministry | null>(null);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
@@ -77,8 +83,18 @@ export default function Inventory() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const filterRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => subscribeEquipment(setEquipment), []);
-  useEffect(() => subscribeCategories(setCategories), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeEquipment(ministryId, setEquipment);
+  }, [ministryId]);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeCategories(ministryId, setCategories);
+  }, [ministryId]);
+  useEffect(() => {
+    if (!ministryId) return;
+    getMinistry(ministryId).then(setMinistry);
+  }, [ministryId]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -488,17 +504,22 @@ export default function Inventory() {
         </div>
       )}
 
-      <EquipmentPanel
-        open={selected !== null}
-        categories={categories}
-        initial={selected === 'new' || selected === null ? undefined : selected}
-        existingCodes={equipment.map((e) => e.inventoryCode)}
-        onClose={() => setSelected(null)}
-        onSubmit={handleSave}
-        onDelete={handleDelete}
-      />
+      {ministry && (
+        <EquipmentPanel
+          open={selected !== null}
+          categories={categories}
+          ministry={ministry}
+          initial={selected === 'new' || selected === null ? undefined : selected}
+          existingCodes={equipment.map((e) => e.inventoryCode)}
+          onClose={() => setSelected(null)}
+          onSubmit={handleSave}
+          onDelete={handleDelete}
+        />
+      )}
 
-      {importing && <ImportInventoryModal onClose={() => setImporting(false)} />}
+      {importing && ministryId && (
+        <ImportInventoryModal ministryId={ministryId} onClose={() => setImporting(false)} />
+      )}
 
       {exporting && <ExportInventoryModal equipment={sorted} onClose={() => setExporting(false)} />}
     </div>

@@ -6,19 +6,26 @@ import {
   removeSubcategory,
   subscribeCategories,
 } from '../../lib/categories';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import type { Category } from '../../types';
 
 export default function Categories() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [subcategoryDrafts, setSubcategoryDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => subscribeCategories(setCategories), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeCategories(ministryId, setCategories);
+  }, [ministryId]);
 
   async function handleAddCategory(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!ministryId) return;
     const name = newCategory.trim();
     if (!name) return;
     if (categories.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
@@ -26,7 +33,7 @@ export default function Categories() {
       return;
     }
     try {
-      await createCategory(name);
+      await createCategory(ministryId, name);
       setNewCategory('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add category.');

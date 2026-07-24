@@ -1,5 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useParams } from 'react-router-dom';
 import { submitBorrowRequest } from '../lib/borrowRequests';
+import { getMinistryBySlug } from '../lib/ministries';
+import type { Ministry } from '../types';
 
 const initialForm = {
   name: '',
@@ -11,17 +14,25 @@ const initialForm = {
 };
 
 export default function BorrowForm() {
+  const { ministrySlug } = useParams<{ ministrySlug: string }>();
+  const [ministry, setMinistry] = useState<Ministry | null | undefined>(undefined); // undefined = loading
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submittedAt, setSubmittedAt] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (!ministrySlug) return;
+    getMinistryBySlug(ministrySlug).then(setMinistry);
+  }, [ministrySlug]);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!ministry) return;
     setSubmitting(true);
     try {
-      await submitBorrowRequest(form);
+      await submitBorrowRequest({ ...form, ministryId: ministry.id }, ministry.notificationEmail);
       setSubmittedAt(Date.now());
       setForm(initialForm);
     } catch (err) {
@@ -29,6 +40,18 @@ export default function BorrowForm() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (ministry === undefined) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
+  }
+
+  if (ministry === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 text-center text-slate-500">
+        This borrow link doesn't match any ministry. Double-check the URL with your ministry admin.
+      </div>
+    );
   }
 
   if (submittedAt) {
@@ -41,8 +64,8 @@ export default function BorrowForm() {
             Submitted on {new Date(submittedAt).toLocaleString()}
           </p>
           <p className="text-slate-500 mb-6">
-            Tech support has received your request. Please proceed to the Tech Office on the
-            5th floor to have your equipment scanned out.
+            {ministry.name} has received your request. They'll reach out once your equipment is
+            ready for pick-up.
           </p>
           <button
             className="text-sm text-primary-600 font-medium hover:underline"
@@ -59,9 +82,9 @@ export default function BorrowForm() {
     <div className="min-h-screen bg-slate-50 px-4 py-10 flex justify-center">
       <div className="max-w-lg w-full">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold text-slate-800">Equipment Borrower's Form</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">{ministry.name} Equipment Borrower's Form</h1>
           <p className="text-slate-500 mt-1">
-            Fill this out to request tech equipment for your ministry/event.
+            Fill this out to request equipment from {ministry.name} for your ministry/event.
           </p>
         </div>
 

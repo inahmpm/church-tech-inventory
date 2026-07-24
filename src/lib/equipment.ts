@@ -48,8 +48,8 @@ function describeChanges(before: Equipment, after: Partial<NewEquipment>): strin
   return changes.length > 0 ? changes.join('\n') : 'No changes';
 }
 
-export function subscribeEquipment(cb: (items: Equipment[]) => void) {
-  const q = query(equipmentCol, orderBy('category'), orderBy('item'));
+export function subscribeEquipment(ministryId: string, cb: (items: Equipment[]) => void) {
+  const q = query(equipmentCol, where('ministryId', '==', ministryId), orderBy('category'), orderBy('item'));
   return onSnapshot(q, (snap) => {
     cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Equipment, 'id'>) })));
   });
@@ -64,6 +64,7 @@ export async function createEquipment(data: NewEquipment) {
     updatedAt: Date.now(),
   });
   await logHistory({
+    ministryId: data.ministryId,
     equipmentId: ref.id,
     inventoryCode: data.inventoryCode,
     item: data.item,
@@ -75,6 +76,7 @@ export async function createEquipment(data: NewEquipment) {
 export async function updateEquipment(id: string, data: Partial<NewEquipment>, before?: Equipment) {
   await updateDoc(doc(db, 'equipment', id), { ...data, updatedAt: Date.now() });
   await logHistory({
+    ministryId: data.ministryId ?? before?.ministryId ?? '',
     equipmentId: id,
     inventoryCode: data.inventoryCode ?? before?.inventoryCode ?? '',
     item: data.item ?? before?.item ?? '',
@@ -83,9 +85,13 @@ export async function updateEquipment(id: string, data: Partial<NewEquipment>, b
   }).catch((err) => console.error('Failed to log history for updated equipment', err));
 }
 
-export async function deleteEquipment(id: string, equipment: Pick<Equipment, 'inventoryCode' | 'item'>) {
+export async function deleteEquipment(
+  id: string,
+  equipment: Pick<Equipment, 'ministryId' | 'inventoryCode' | 'item'>,
+) {
   await deleteDoc(doc(db, 'equipment', id));
   await logHistory({
+    ministryId: equipment.ministryId,
     equipmentId: id,
     inventoryCode: equipment.inventoryCode,
     item: equipment.item,
@@ -97,7 +103,7 @@ export async function deleteEquipment(id: string, equipment: Pick<Equipment, 'in
 const FIRESTORE_BATCH_LIMIT = 500;
 
 export async function deleteEquipmentBulk(
-  items: Pick<Equipment, 'id' | 'inventoryCode' | 'item'>[],
+  items: Pick<Equipment, 'id' | 'ministryId' | 'inventoryCode' | 'item'>[],
   details = 'Removed from inventory (bulk delete)',
 ) {
   for (let i = 0; i < items.length; i += FIRESTORE_BATCH_LIMIT) {
@@ -111,6 +117,7 @@ export async function deleteEquipmentBulk(
   await Promise.all(
     items.map((item) =>
       logHistory({
+        ministryId: item.ministryId,
         equipmentId: item.id,
         inventoryCode: item.inventoryCode,
         item: item.item,
@@ -121,8 +128,12 @@ export async function deleteEquipmentBulk(
   );
 }
 
-export async function findEquipmentByCode(inventoryCode: string): Promise<Equipment | null> {
-  const q = query(equipmentCol, where('inventoryCode', '==', inventoryCode));
+export async function findEquipmentByCode(ministryId: string, inventoryCode: string): Promise<Equipment | null> {
+  const q = query(
+    equipmentCol,
+    where('ministryId', '==', ministryId),
+    where('inventoryCode', '==', inventoryCode),
+  );
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const d = snap.docs[0];

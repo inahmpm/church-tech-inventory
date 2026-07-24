@@ -4,17 +4,23 @@ import {
   HISTORY_LOG_ACTION_LABELS as ACTION_LABELS,
   subscribeHistoryLogs,
 } from '../../lib/historyLogs';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import { HISTORY_LOG_ACTIONS } from '../../types';
 import type { HistoryLogAction, HistoryLogEntry } from '../../types';
 
 export default function HistoryLogs() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [logs, setLogs] = useState<HistoryLogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState<'' | HistoryLogAction>('');
   const [error, setError] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<HistoryLogEntry | null>(null);
 
-  useEffect(() => subscribeHistoryLogs(setLogs, (err) => setError(err.message)), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeHistoryLogs(ministryId, setLogs, (err) => setError(err.message));
+  }, [ministryId]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -4,13 +4,15 @@ import type { AssignedType, EquipmentStatus, NewEquipment } from '../types';
 import { parseCsv } from '../lib/csv';
 import { createEquipment } from '../lib/equipment';
 
+type ImportableEquipment = Omit<NewEquipment, 'ministryId'>;
+
 interface ParsedRow {
   line: number;
-  data: NewEquipment | null;
+  data: ImportableEquipment | null;
   error: string | null;
 }
 
-const HEADER_ALIASES: Record<string, keyof NewEquipment> = {
+const HEADER_ALIASES: Record<string, keyof ImportableEquipment> = {
   category: 'category',
   subcategory: 'subcategory',
   'inventory code': 'inventoryCode',
@@ -35,7 +37,7 @@ function parseRows(text: string): ParsedRow[] {
   if (table.length === 0) return [];
 
   const headerRow = table[0].map((h) => h.trim().toLowerCase());
-  const colIndex: Partial<Record<keyof NewEquipment, number>> = {};
+  const colIndex: Partial<Record<keyof ImportableEquipment, number>> = {};
   headerRow.forEach((h, i) => {
     const key = HEADER_ALIASES[h];
     if (key) colIndex[key] = i;
@@ -43,7 +45,7 @@ function parseRows(text: string): ParsedRow[] {
 
   return table.slice(1).map((cols, i) => {
     const line = i + 2;
-    const get = (key: keyof NewEquipment) => {
+    const get = (key: keyof ImportableEquipment) => {
       const idx = colIndex[key];
       return idx === undefined ? '' : (cols[idx] ?? '').trim();
     };
@@ -85,7 +87,13 @@ function parseRows(text: string): ParsedRow[] {
   });
 }
 
-export default function ImportInventoryModal({ onClose }: { onClose: () => void }) {
+export default function ImportInventoryModal({
+  ministryId,
+  onClose,
+}: {
+  ministryId: string;
+  onClose: () => void;
+}) {
   const [rows, setRows] = useState<ParsedRow[] | null>(null);
   const [fileName, setFileName] = useState('');
   const [importing, setImporting] = useState(false);
@@ -111,7 +119,7 @@ export default function ImportInventoryModal({ onClose }: { onClose: () => void 
         continue;
       }
       try {
-        await createEquipment(row.data);
+        await createEquipment({ ...row.data, ministryId });
         success++;
       } catch {
         failed++;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { subscribeEquipment } from '../../lib/equipment';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import { EQUIPMENT_STATUSES } from '../../types';
 import type { Equipment } from '../../types';
 
@@ -18,6 +19,8 @@ function emptyPurchaseRow(id: number): PurchaseRow {
 }
 
 export default function Report() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [section, setSection] = useState('Technology');
   const [category, setCategory] = useState('All');
@@ -37,7 +40,10 @@ export default function Report() {
     setPurchaseRows((rows) => (rows.length > 1 ? rows.filter((r) => r.id !== id) : rows));
   }
 
-  useEffect(() => subscribeEquipment(setEquipment), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeEquipment(ministryId, setEquipment);
+  }, [ministryId]);
 
   const categories = useMemo(
     () => Array.from(new Set(equipment.map((e) => e.category))).sort(),
