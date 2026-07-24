@@ -36,20 +36,39 @@ export default function AdminLayout() {
   const pendingCount = requests.filter((r) => !r.fulfilledAt).length;
   const activeCount = active.filter((r) => r.fulfilledAt).length;
 
-  const navItems = [
-    { to: '/admin', label: 'Dashboard', end: true },
-    { to: '/admin/inventory', label: 'Inventory' },
-    { to: '/admin/requests', label: 'Borrow Requests', count: pendingCount },
-    { to: '/admin/active', label: 'Active Borrows', count: activeCount },
-    { to: '/admin/history', label: 'Return History' },
-    { to: '/admin/logs', label: 'History Logs' },
-    { to: '/admin/categories', label: 'Categories' },
-    { to: '/admin/report', label: 'Generate Report' },
-    ...(profile?.role === 'ministry-admin' || profile?.role === 'super-admin'
-      ? [{ to: '/admin/users', label: 'Users' }]
-      : []),
-    ...(profile?.role === 'super-admin' ? [{ to: '/admin/ministries', label: 'Ministries' }] : []),
+  const canManageUsers = profile?.role === 'ministry-admin' || profile?.role === 'super-admin';
+  const canManageMinistries = profile?.role === 'super-admin';
+
+  const navGroups: {
+    label?: string;
+    items: { to: string; label: string; end?: boolean; count?: number; external?: boolean }[];
+  }[] = [
+    { items: [{ to: '/admin', label: 'Dashboard', end: true }] },
+    { items: [{ to: '/admin/inventory', label: 'Equipment Inventory' }] },
+    {
+      label: 'Equipment Borrowing',
+      items: [
+        { to: '/admin/requests', label: 'Borrow Requests', count: pendingCount },
+        { to: '/admin/active', label: 'Active Borrows', count: activeCount },
+        { to: '/admin/history', label: 'Return History' },
+        ...(ministry?.slug
+          ? [{ to: `/borrow/${ministry.slug}`, label: "Borrower's Form", external: true }]
+          : []),
+      ],
+    },
+    { items: [{ to: '/admin/report', label: 'Reporting' }] },
+    {
+      label: 'Settings',
+      items: [
+        ...(canManageUsers ? [{ to: '/admin/users', label: 'Users' }] : []),
+        ...(canManageMinistries ? [{ to: '/admin/ministries', label: 'Ministries' }] : []),
+        { to: '/admin/categories', label: 'Equipment Categories' },
+      ],
+    },
+    { items: [{ to: '/admin/logs', label: 'History Logs' }] },
   ];
+
+  const navItems = navGroups.flatMap((group) => group.items);
 
   if (authUser === undefined || profile === undefined) {
     return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
@@ -80,7 +99,7 @@ export default function AdminLayout() {
   )?.label;
 
   return (
-    <div className="min-h-screen bg-slate-50 md:flex">
+    <div className="min-h-screen bg-slate-50 md:flex md:h-screen md:overflow-hidden">
       <header className="md:hidden h-14 flex items-center justify-between px-4 border-b border-slate-200 bg-white sticky top-0 z-40">
         <button
           className="text-slate-600 p-2 -ml-2"
@@ -100,7 +119,7 @@ export default function AdminLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col transition-transform duration-200 md:sticky md:top-0 md:h-screen md:translate-x-0 ${
           menuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -122,26 +141,52 @@ export default function AdminLayout() {
             &times;
           </button>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium ${
-                  isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-100'
-                }`
-              }
-            >
-              <span>{item.label}</span>
-              {!!item.count && (
-                <span className="ml-2 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary-600 text-white text-xs font-semibold flex items-center justify-center">
-                  {item.count}
-                </span>
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-4">
+          {navGroups.map((group, i) => (
+            <div key={group.label ?? i}>
+              {group.label && (
+                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {group.label}
+                </div>
               )}
-            </NavLink>
+              <div className="space-y-1">
+                {group.items.map((item) =>
+                  item.external ? (
+                    <a
+                      key={item.to}
+                      href={item.to}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+                    >
+                      <span>{item.label}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-slate-400">
+                        <path d="M7 17L17 7M7 7h10v10" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </a>
+                  ) : (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      onClick={() => setMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium ${
+                          isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-100'
+                        }`
+                      }
+                    >
+                      <span>{item.label}</span>
+                      {!!item.count && (
+                        <span className="ml-2 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-primary-600 text-white text-xs font-semibold flex items-center justify-center">
+                          {item.count}
+                        </span>
+                      )}
+                    </NavLink>
+                  ),
+                )}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="px-4 py-4 border-t border-slate-200 space-y-2">
@@ -154,7 +199,7 @@ export default function AdminLayout() {
           </button>
         </div>
       </aside>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 md:h-screen md:overflow-y-auto">
         <main className="max-w-6xl mx-auto px-4 py-6 md:py-8">
           <Outlet />
         </main>
