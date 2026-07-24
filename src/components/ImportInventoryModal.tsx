@@ -15,6 +15,8 @@ const HEADER_ALIASES: Record<string, keyof NewEquipment> = {
   subcategory: 'subcategory',
   'inventory code': 'inventoryCode',
   inventorycode: 'inventoryCode',
+  'serial number': 'serialNumber',
+  serialnumber: 'serialNumber',
   item: 'item',
   'assigned type': 'assignedType',
   assignedtype: 'assignedType',
@@ -70,6 +72,7 @@ function parseRows(text: string): ParsedRow[] {
         category,
         subcategory: get('subcategory'),
         inventoryCode: inventoryCode.toUpperCase(),
+        serialNumber: get('serialNumber'),
         item,
         assignedType,
         assignedTo: get('assignedTo'),
@@ -126,9 +129,9 @@ export default function ImportInventoryModal({ onClose }: { onClose: () => void 
       <div className="card max-w-lg w-full space-y-4 max-h-[90vh] overflow-y-auto">
         <h2 className="font-semibold text-slate-800 text-lg">Import Inventory</h2>
         <p className="text-sm text-slate-500">
-          Upload a CSV with columns: Category, Subcategory, Inventory Code, Item, Assigned Type, Assigned To,
-          Location, Purchase Date, Status, Status Details. Only Item is required (Assigned Type defaults to
-          Borrowable).
+          Upload a CSV with columns: Category, Subcategory, Inventory Code, Serial Number, Item, Assigned Type,
+          Assigned To, Location, Purchase Date, Status, Status Details. Only Item is required (Assigned Type
+          defaults to Borrowable).
         </p>
 
         <input
