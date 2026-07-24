@@ -8,6 +8,7 @@ export default function EquipmentPanel({
   initial,
   categories,
   open,
+  existingCodes,
   onClose,
   onSubmit,
   onDelete,
@@ -15,6 +16,7 @@ export default function EquipmentPanel({
   initial?: Equipment;
   categories: Category[];
   open: boolean;
+  existingCodes?: string[];
   onClose: () => void;
   onSubmit: (data: NewEquipment) => Promise<void>;
   onDelete?: (e: Equipment) => void;
@@ -27,9 +29,20 @@ export default function EquipmentPanel({
 
   useEffect(() => {
     if (open) {
-      setForm(blankForm(initial));
+      setForm(
+        initial ? blankForm(initial) : { ...blankForm(initial), inventoryCode: generateInventoryCode(existingCodes) },
+      );
       setError(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial, open]);
+
+  useEffect(() => {
+    if (!open || !initial) {
+      setHistory([]);
+      return;
+    }
+    return subscribeHistoryLogs((logs) => setHistory(logs.filter((l) => l.equipmentId === initial.id)));
   }, [initial, open]);
 
   useEffect(() => {
@@ -126,11 +139,10 @@ export default function EquipmentPanel({
 
           <Field label="Inventory Code (barcode value)">
             <input
-              required
-              className="input font-mono"
+              readOnly
+              disabled
+              className="input font-mono bg-slate-50 text-slate-500 cursor-not-allowed"
               value={form.inventoryCode}
-              onChange={(e) => setForm({ ...form, inventoryCode: e.target.value.toUpperCase() })}
-              placeholder="e.g. AUD-0001"
             />
           </Field>
 
@@ -306,6 +318,18 @@ export default function EquipmentPanel({
       )}
     </>
   );
+}
+
+function generateInventoryCode(existingCodes?: string[]): string {
+  const taken = new Set(existingCodes ?? []);
+  let code: string;
+  do {
+    const random = Math.floor(Math.random() * 10_000)
+      .toString()
+      .padStart(4, '0');
+    code = `TECH-${random}`;
+  } while (taken.has(code));
+  return code;
 }
 
 function blankForm(initial?: Equipment): NewEquipment {
