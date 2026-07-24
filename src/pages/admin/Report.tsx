@@ -21,6 +21,7 @@ export default function Report() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [section, setSection] = useState('Technology');
   const [category, setCategory] = useState('All');
+  const [subcategory, setSubcategory] = useState('All');
   const nextRowId = useRef(1);
   const [purchaseRows, setPurchaseRows] = useState<PurchaseRow[]>([emptyPurchaseRow(0)]);
 
@@ -43,9 +44,30 @@ export default function Report() {
     [equipment],
   );
 
-  const filtered = useMemo(
-    () => (category === 'All' ? equipment : equipment.filter((e) => e.category === category)),
+  const subcategories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          equipment
+            .filter((e) => category === 'All' || e.category === category)
+            .map((e) => e.subcategory)
+            .filter(Boolean),
+        ),
+      ).sort(),
     [equipment, category],
+  );
+
+  function handleCategoryChange(value: string) {
+    setCategory(value);
+    setSubcategory('All');
+  }
+
+  const filtered = useMemo(
+    () =>
+      equipment
+        .filter((e) => category === 'All' || e.category === category)
+        .filter((e) => subcategory === 'All' || e.subcategory === subcategory),
+    [equipment, category, subcategory],
   );
 
   const sorted = useMemo(
@@ -81,15 +103,23 @@ export default function Report() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print:space-y-1">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <h1 className="text-xl font-semibold text-slate-800">Generate Report</h1>
         <div className="flex flex-wrap gap-2">
-          <select className="input w-auto" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select className="input w-auto" value={category} onChange={(e) => handleCategoryChange(e.target.value)}>
             <option value="All">All categories</option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
+              </option>
+            ))}
+          </select>
+          <select className="input w-auto" value={subcategory} onChange={(e) => setSubcategory(e.target.value)}>
+            <option value="All">All sub categories</option>
+            {subcategories.map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
           </select>
@@ -106,12 +136,12 @@ export default function Report() {
         </label>
       </div>
 
-      <div className="card space-y-3 print:shadow-none print:ring-0 print:p-0">
+      <div className="card space-y-3 print:space-y-1 print:shadow-none print:ring-0 print:p-0">
         <div className="flex items-baseline justify-between flex-wrap gap-1">
-          <h2 className="text-lg font-bold text-slate-800">EQUIPMENT INVENTORY DETAILS</h2>
-          <span className="text-sm text-slate-500">as of {today}</span>
+          <h2 className="text-lg font-bold text-slate-800 print:text-xs">EQUIPMENT INVENTORY DETAILS</h2>
+          <span className="text-sm text-slate-500 print:text-[8px]">as of {today}</span>
         </div>
-        <div className="flex flex-wrap gap-x-8 gap-y-1 text-sm">
+        <div className="flex flex-wrap gap-x-8 print:gap-x-3 gap-y-1 text-sm print:text-[8px]">
           <div>
             <span className="font-semibold text-slate-700">Section: </span>
             {section}
@@ -120,10 +150,14 @@ export default function Report() {
             <span className="font-semibold text-slate-700">Category: </span>
             {category}
           </div>
+          <div>
+            <span className="font-semibold text-slate-700">Sub Category: </span>
+            {subcategory}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-xs sm:text-sm border border-slate-200">
+          <table className="min-w-full text-xs sm:text-sm print:text-[8px] border border-slate-200">
             <thead className="bg-slate-100 text-slate-700">
               <tr>
                 <Th>Items</Th>
@@ -159,16 +193,16 @@ export default function Report() {
         </div>
       </div>
 
-      <div className="card space-y-3 print:shadow-none print:ring-0 print:p-0">
+      <div className="card space-y-3 print:space-y-1 print:shadow-none print:ring-0 print:p-0">
         <div className="flex items-center justify-between flex-wrap gap-1">
-          <h2 className="text-lg font-bold text-slate-800">Purchase Description</h2>
+          <h2 className="text-lg font-bold text-slate-800 print:text-xs">Purchase Description</h2>
           <button className="btn-secondary print:hidden" onClick={addPurchaseRow} type="button">
             + Add Row
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-xs sm:text-sm border border-slate-200">
+          <table className="min-w-full text-xs sm:text-sm print:text-[8px] border border-slate-200">
             <thead className="bg-slate-100 text-slate-700">
               <tr>
                 <Th>Proposed Items</Th>
@@ -227,12 +261,12 @@ export default function Report() {
         </div>
       </div>
 
-      <div className="card space-y-3 print:break-before-page print:shadow-none print:ring-0 print:p-0">
+      <div className="card space-y-3 print:space-y-1 print:break-before-page print:shadow-none print:ring-0 print:p-0">
         <div className="flex items-baseline justify-between flex-wrap gap-1">
-          <h2 className="text-lg font-bold text-slate-800">EQUIPMENT INVENTORY SUMMARY</h2>
-          <span className="text-sm text-slate-500">as of {today}</span>
+          <h2 className="text-lg font-bold text-slate-800 print:text-xs">EQUIPMENT INVENTORY SUMMARY</h2>
+          <span className="text-sm text-slate-500 print:text-[8px]">as of {today}</span>
         </div>
-        <div className="text-sm space-y-0.5">
+        <div className="text-sm print:text-[8px] space-y-0.5">
           <div>
             <span className="font-semibold text-slate-700">Section: </span>
             {section}
@@ -241,10 +275,14 @@ export default function Report() {
             <span className="font-semibold text-slate-700">Category: </span>
             {category}
           </div>
+          <div>
+            <span className="font-semibold text-slate-700">Sub Category: </span>
+            {subcategory}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-xs sm:text-sm border border-slate-200">
+          <table className="min-w-full text-xs sm:text-sm print:text-[8px] border border-slate-200">
             <thead className="bg-slate-100 text-slate-700">
               <tr>
                 <Th>Equipment Name</Th>
@@ -295,11 +333,21 @@ export default function Report() {
 }
 
 function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-2 py-2 lg:px-3 text-left font-semibold whitespace-nowrap ${className}`}>{children}</th>;
+  return (
+    <th
+      className={`px-2 py-2 lg:px-3 text-left font-semibold whitespace-nowrap print:whitespace-normal print:px-1 print:py-0.5 print:text-[8px] ${className}`}
+    >
+      {children}
+    </th>
+  );
 }
 
 function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-2 py-2 lg:px-3 text-slate-700 ${className}`}>{children}</td>;
+  return (
+    <td className={`px-2 py-2 lg:px-3 text-slate-700 print:px-1 print:py-0.5 print:text-[8px] ${className}`}>
+      {children}
+    </td>
+  );
 }
 
 function PurchaseInput({
