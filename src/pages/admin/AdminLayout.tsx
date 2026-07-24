@@ -27,6 +27,7 @@ export default function AdminLayout() {
     { to: '/admin/history', label: 'Return History' },
     { to: '/admin/logs', label: 'History Logs' },
     { to: '/admin/categories', label: 'Categories' },
+    { to: '/admin/report', label: 'Generate Report' },
   ];
 
   if (user === undefined) {
