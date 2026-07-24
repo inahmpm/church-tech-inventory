@@ -3,6 +3,7 @@ import { HISTORY_LOG_ACTION_COLORS, HISTORY_LOG_ACTION_LABELS, subscribeHistoryL
 import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
 import type { AssignedType, Category, Equipment, EquipmentStatus, HistoryLogEntry, NewEquipment } from '../types';
 import BarcodeLabel from './BarcodeLabel';
+import BarcodeLabel, { generateBarcodeSvgMarkup } from './BarcodeLabel';
 
 export default function EquipmentPanel({
   initial,
@@ -47,6 +48,38 @@ export default function EquipmentPanel({
 
   const subcategoryOptions = categories.find((c) => c.name === form.category)?.subcategories ?? [];
 
+  function handlePrintLabel() {
+    if (!form.inventoryCode) return;
+    const printWindow = window.open('', '_blank', 'width=420,height=320');
+    if (!printWindow) return;
+    const barcodeSvg = generateBarcodeSvgMarkup(form.inventoryCode);
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Print Label - ${escapeHtml(form.inventoryCode)}</title>
+          <style>
+            @page { margin: 0.2in; }
+            body { margin: 0; display: flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; }
+            .label { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; }
+            .item-name { font-size: 12px; color: #334155; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="label">
+            ${form.item ? `<div class="item-name">${escapeHtml(form.item)}</div>` : ''}
+            ${barcodeSvg}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -84,8 +117,11 @@ export default function EquipmentPanel({
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {form.inventoryCode && (
-            <div className="flex justify-center py-2 border-b border-slate-100">
+            <div className="flex flex-col items-center gap-2 py-2 border-b border-slate-100">
               <BarcodeLabel value={form.inventoryCode} itemName={form.item} />
+              <button type="button" className="btn-secondary text-sm" onClick={handlePrintLabel}>
+                Print Label
+              </button>
             </div>
           )}
 
@@ -310,6 +346,12 @@ export default function EquipmentPanel({
       )}
     </>
   );
+}
+
+function escapeHtml(value: string): string {
+  const div = document.createElement('div');
+  div.textContent = value;
+  return div.innerHTML;
 }
 
 function generateInventoryCode(existingCodes?: string[]): string {

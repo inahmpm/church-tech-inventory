@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 import JsBarcode from 'jsbarcode';
 
+export function generateBarcodeSvgMarkup(value: string, width = 2.2, height = 70): string {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  JsBarcode(svg, value, { format: 'CODE128', width, height, fontSize: 16, margin: 8 });
+  return svg.outerHTML;
+}
+
 export default function BarcodeLabel({
   value,
   itemName,
