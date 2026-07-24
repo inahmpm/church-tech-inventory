@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Firebase Admin SDK service account key (used only for local migration scripts)
+serviceAccountKey*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

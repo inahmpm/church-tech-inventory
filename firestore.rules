@@ -7,44 +7,104 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Equipment inventory: only signed-in tech support admins can read/write.
+    // The signed-in caller's own /users profile doc (role + ministry membership).
+    function myUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isActiveUser() {
+      return isSignedIn() && myUser().active == true;
+    }
+
+    function isSuperAdmin() {
+      return isActiveUser() && myUser().role == 'super-admin';
+    }
+
+    function isMinistryAdmin() {
+      return isActiveUser() && myUser().role == 'ministry-admin';
+    }
+
+    function myMinistry() {
+      return myUser().ministryId;
+    }
+
+    // Whether the caller may read/write a doc that belongs to a given ministry.
+    function sameMinistry(ministryId) {
+      return isActiveUser() && myMinistry() == ministryId;
+    }
+
+    // Ministries: any signed-in user can read (needed to resolve their own
+    // ministry's name/prefix); the public borrow page also needs read access
+    // to resolve a ministry by slug. Only super-admins create ministries; a
+    // ministry-admin may only update their own ministry's doc (name, prefix,
+    // notification email) — never create/delete one, and never touch another
+    // ministry's doc.
+    match /ministries/{ministryId} {
+      allow read: if true;
+      allow create, delete: if isSuperAdmin();
+      allow update: if isSuperAdmin() ||
+        (isMinistryAdmin() && myMinistry() == ministryId);
+    }
+
+    // User profiles: a user may always read their own doc (needed to bootstrap
+    // useCurrentUser before we know their role). A ministry-admin may read/write
+    // docs within their own ministry, but can never grant super-admin and can
+    // never move a user into a different ministry. Super-admins can read/write
+    // everyone.
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow read, write: if isSuperAdmin();
+      allow create, update: if isMinistryAdmin()
+        && request.resource.data.ministryId == myMinistry()
+        && request.resource.data.role != 'super-admin';
+    }
+
+    // Equipment inventory: scoped to the caller's own ministry; super-admins
+    // can see/manage everything.
     match /equipment/{equipmentId} {
-      allow read, write: if isSignedIn();
+      allow read, update, delete: if isSuperAdmin() || sameMinistry(resource.data.ministryId);
+      allow create: if isSuperAdmin() || sameMinistry(request.resource.data.ministryId);
     }
 
-    // Categories/subcategories used to classify equipment: only signed-in tech
-    // support admins can read/write.
+    // Categories/subcategories used to classify equipment: scoped per ministry.
     match /categories/{categoryId} {
-      allow read, write: if isSignedIn();
+      allow read, update, delete: if isSuperAdmin() || sameMinistry(resource.data.ministryId);
+      allow create: if isSuperAdmin() || sameMinistry(request.resource.data.ministryId);
     }
 
-    // Borrow requests: the public can create a request (the borrower's form),
-    // but only admins can read the list, update it (scanning/finalizing/returning),
-    // or delete it. This keeps other borrowers' names/contact numbers private.
+    // Borrow requests: the public can create a request against a specific
+    // ministry (the borrower's form), but only that ministry's admins/members
+    // (or a super-admin) can read the list, update it (scanning/finalizing/
+    // returning), or delete it. This keeps other borrowers' names/contact
+    // numbers private and keeps ministries' requests separate.
     match /borrowRequests/{requestId} {
       allow create: if request.resource.data.keys().hasAll(
-        ['name', 'email', 'ministry', 'contactNo', 'venue', 'equipmentRequested', 'status', 'items', 'submittedAt']
+        ['ministryId', 'name', 'email', 'ministry', 'contactNo', 'venue', 'equipmentRequested', 'status', 'items', 'submittedAt']
       ) && request.resource.data.status == 'pending'
-        && request.resource.data.items.size() == 0;
-      allow read, update, delete: if isSignedIn();
+        && request.resource.data.items.size() == 0
+        && exists(/databases/$(database)/documents/ministries/$(request.resource.data.ministryId));
+      allow read, update, delete: if isSuperAdmin() || sameMinistry(resource.data.ministryId);
     }
 
     // History logs: an immutable audit trail of every inventory movement
-    // (created/updated/deleted/borrowed/removed/handed_out/returned). Only
-    // signed-in admins can read or write, and entries can never be edited or
-    // removed once written.
+    // (created/updated/deleted/borrowed/removed/handed_out/returned), scoped
+    // per ministry. Entries can never be edited or removed once written.
     match /historyLogs/{logId} {
-      allow read, create: if isSignedIn();
+      allow read: if isSuperAdmin() || sameMinistry(resource.data.ministryId);
+      allow create: if isSuperAdmin() || sameMinistry(request.resource.data.ministryId);
       allow update, delete: if false;
     }
 
-    // Mail queue consumed by the "Trigger Email" extension. The public borrow form
-    // can only queue a notification to the fixed tech-office address; signed-in
-    // admins (finalizing/returning requests) can queue mail to any address.
-    // No one can read/update/delete — only the extension's service account touches
-    // these docs after creation, which bypasses these rules.
+    // Mail queue consumed by the "Trigger Email" extension. The public borrow
+    // form can only queue a notification to the target ministry's own
+    // notification address; signed-in admins (finalizing/returning requests)
+    // can queue mail to any address. No one can read/update/delete — only the
+    // extension's service account touches these docs after creation, which
+    // bypasses these rules.
     match /mail/{mailId} {
-      allow create: if isSignedIn() || request.resource.data.to == 'cogtech.dasma@gmail.com';
+      allow create: if isSignedIn() ||
+        exists(/databases/$(database)/documents/ministries/$(request.resource.data.ministryId)) &&
+        get(/databases/$(database)/documents/ministries/$(request.resource.data.ministryId)).data.notificationEmail == request.resource.data.to;
       allow read, update, delete: if false;
     }
   }

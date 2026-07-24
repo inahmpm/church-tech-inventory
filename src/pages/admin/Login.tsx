@@ -28,7 +28,7 @@ export default function Login() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="card max-w-sm w-full space-y-4">
         <h1 className="text-xl font-semibold text-slate-800 text-center mb-2">
-          Tech Support Admin Login
+          Admin Login
         </h1>
         <label className="block">
           <span className="block text-sm font-medium text-slate-700 mb-1">Email</span>

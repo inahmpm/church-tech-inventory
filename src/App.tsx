@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import BorrowForm from './pages/BorrowForm';
 import Login from './pages/admin/Login';
 import AdminLayout from './pages/admin/AdminLayout';
+import ChangePassword from './pages/admin/ChangePassword';
 import Dashboard from './pages/admin/Dashboard';
 import Inventory from './pages/admin/Inventory';
 import Requests from './pages/admin/Requests';
@@ -10,17 +11,20 @@ import ReturnHistory from './pages/admin/ReturnHistory';
 import HistoryLogs from './pages/admin/HistoryLogs';
 import Categories from './pages/admin/Categories';
 import Report from './pages/admin/Report';
+import Users from './pages/admin/Users';
+import Ministries from './pages/admin/Ministries';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/borrow" replace />} />
-        <Route path="/borrow" element={<BorrowForm />} />
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="/borrow/:ministrySlug" element={<BorrowForm />} />
 
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="change-password" element={<ChangePassword />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="requests" element={<Requests />} />
           <Route path="active" element={<ActiveBorrows />} />
@@ -28,9 +32,11 @@ export default function App() {
           <Route path="logs" element={<HistoryLogs />} />
           <Route path="categories" element={<Categories />} />
           <Route path="report" element={<Report />} />
+          <Route path="users" element={<Users />} />
+          <Route path="ministries" element={<Ministries />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/borrow" replace />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </BrowserRouter>
   );

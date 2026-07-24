@@ -1,4 +1,4 @@
-import { addDoc, collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import type { HistoryLogAction, HistoryLogEntry } from '../types';
 
@@ -25,6 +25,7 @@ export const HISTORY_LOG_ACTION_COLORS: Record<HistoryLogAction, string> = {
 };
 
 export function logHistory(entry: {
+  ministryId: string;
   equipmentId: string;
   inventoryCode: string;
   item: string;
@@ -38,8 +39,12 @@ export function logHistory(entry: {
   });
 }
 
-export function subscribeHistoryLogs(cb: (items: HistoryLogEntry[]) => void, onError?: (err: Error) => void) {
-  const q = query(historyLogsCol, orderBy('timestamp', 'desc'));
+export function subscribeHistoryLogs(
+  ministryId: string,
+  cb: (items: HistoryLogEntry[]) => void,
+  onError?: (err: Error) => void,
+) {
+  const q = query(historyLogsCol, where('ministryId', '==', ministryId), orderBy('timestamp', 'desc'));
   return onSnapshot(
     q,
     (snap) => {

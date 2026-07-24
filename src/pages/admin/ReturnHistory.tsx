@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
 import { subscribeBorrowRequests } from '../../lib/borrowRequests';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import type { BorrowRequest } from '../../types';
 
 export default function ReturnHistory() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
 
-  useEffect(() => subscribeBorrowRequests(['returned'], setRequests), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['returned'], setRequests, ministryId);
+  }, [ministryId]);
 
   const rows = requests
     .flatMap((r) =>

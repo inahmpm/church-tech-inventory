@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { HISTORY_LOG_ACTION_COLORS, HISTORY_LOG_ACTION_LABELS, subscribeHistoryLogs } from '../lib/historyLogs';
 import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
-import type { AssignedType, Category, Equipment, EquipmentStatus, HistoryLogEntry, NewEquipment } from '../types';
+import type { AssignedType, Category, Equipment, EquipmentStatus, HistoryLogEntry, Ministry, NewEquipment } from '../types';
 import BarcodeLabel, { generateBarcodeSvgMarkup } from './BarcodeLabel';
 
 export default function EquipmentPanel({
   initial,
   categories,
+  ministry,
   open,
   existingCodes,
   onClose,
@@ -15,13 +16,14 @@ export default function EquipmentPanel({
 }: {
   initial?: Equipment;
   categories: Category[];
+  ministry: Ministry;
   open: boolean;
   existingCodes?: string[];
   onClose: () => void;
   onSubmit: (data: NewEquipment) => Promise<void>;
   onDelete?: (e: Equipment) => void;
 }) {
-  const [form, setForm] = useState<NewEquipment>(blankForm(initial));
+  const [form, setForm] = useState<NewEquipment>(blankForm(ministry.id, initial));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [history, setHistory] = useState<HistoryLogEntry[]>([]);
@@ -30,7 +32,12 @@ export default function EquipmentPanel({
   useEffect(() => {
     if (open) {
       setForm(
-        initial ? blankForm(initial) : { ...blankForm(initial), inventoryCode: generateInventoryCode(existingCodes) },
+        initial
+          ? blankForm(ministry.id, initial)
+          : {
+              ...blankForm(ministry.id, initial),
+              inventoryCode: generateInventoryCode(ministry.inventoryCodePrefix, existingCodes),
+            },
       );
       setError(null);
     }
@@ -42,8 +49,8 @@ export default function EquipmentPanel({
       setHistory([]);
       return;
     }
-    return subscribeHistoryLogs((logs) => setHistory(logs.filter((l) => l.equipmentId === initial.id)));
-  }, [initial, open]);
+    return subscribeHistoryLogs(ministry.id, (logs) => setHistory(logs.filter((l) => l.equipmentId === initial.id)));
+  }, [initial, open, ministry.id]);
 
   const subcategoryOptions = categories.find((c) => c.name === form.category)?.subcategories ?? [];
 
@@ -353,20 +360,21 @@ function escapeHtml(value: string): string {
   return div.innerHTML;
 }
 
-function generateInventoryCode(existingCodes?: string[]): string {
+function generateInventoryCode(prefix: string, existingCodes?: string[]): string {
   const taken = new Set(existingCodes ?? []);
   let code: string;
   do {
     const random = Math.floor(Math.random() * 10_000)
       .toString()
       .padStart(4, '0');
-    code = `TECH-${random}`;
+    code = `${prefix}-${random}`;
   } while (taken.has(code));
   return code;
 }
 
-function blankForm(initial?: Equipment): NewEquipment {
+function blankForm(ministryId: string, initial?: Equipment): NewEquipment {
   return {
+    ministryId: initial?.ministryId ?? ministryId,
     category: initial?.category ?? '',
     subcategory: initial?.subcategory ?? '',
     inventoryCode: initial?.inventoryCode ?? '',

@@ -2,19 +2,36 @@ import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { useAuth } from '../../lib/useAuth';
+import { useCurrentUser } from '../../lib/useCurrentUser';
+import { getMinistry } from '../../lib/ministries';
 import { subscribeBorrowRequests } from '../../lib/borrowRequests';
-import type { BorrowRequest } from '../../types';
+import type { BorrowRequest, Ministry } from '../../types';
 
 export default function AdminLayout() {
-  const user = useAuth();
+  const { authUser, profile } = useCurrentUser();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
   const [active, setActive] = useState<BorrowRequest[]>([]);
+  const [ministry, setMinistry] = useState<Ministry | null>(null);
 
-  useEffect(() => subscribeBorrowRequests(['pending', 'borrowed'], setRequests), []);
-  useEffect(() => subscribeBorrowRequests(['borrowed'], setActive), []);
+  const ministryId = profile?.ministryId;
+
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['pending', 'borrowed'], setRequests, ministryId);
+  }, [ministryId]);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['borrowed'], setActive, ministryId);
+  }, [ministryId]);
+  useEffect(() => {
+    if (!ministryId) {
+      setMinistry(null);
+      return;
+    }
+    getMinistry(ministryId).then(setMinistry);
+  }, [ministryId]);
 
   const pendingCount = requests.filter((r) => !r.fulfilledAt).length;
   const activeCount = active.filter((r) => r.fulfilledAt).length;
@@ -28,13 +45,34 @@ export default function AdminLayout() {
     { to: '/admin/logs', label: 'History Logs' },
     { to: '/admin/categories', label: 'Categories' },
     { to: '/admin/report', label: 'Generate Report' },
+    ...(profile?.role === 'ministry-admin' || profile?.role === 'super-admin'
+      ? [{ to: '/admin/users', label: 'Users' }]
+      : []),
+    ...(profile?.role === 'super-admin' ? [{ to: '/admin/ministries', label: 'Ministries' }] : []),
   ];
 
-  if (user === undefined) {
+  if (authUser === undefined || profile === undefined) {
     return <div className="min-h-screen flex items-center justify-center text-slate-500">Loading...</div>;
   }
-  if (user === null) {
+  if (authUser === null) {
     return <Navigate to="/admin/login" replace />;
+  }
+  if (profile === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500 text-center px-4">
+        Your account isn't set up in any ministry yet. Ask an admin to add you.
+      </div>
+    );
+  }
+  if (!profile.active) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500 text-center px-4">
+        Your access has been disabled. Contact your ministry admin.
+      </div>
+    );
+  }
+  if (profile.mustChangePassword && location.pathname !== '/admin/change-password') {
+    return <Navigate to="/admin/change-password" replace />;
   }
 
   const activeLabel = navItems.find((item) =>
@@ -53,7 +91,7 @@ export default function AdminLayout() {
             <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
           </svg>
         </button>
-        <span className="font-semibold text-slate-800 text-sm">{activeLabel ?? 'COG Dasma Inventory'}</span>
+        <span className="font-semibold text-slate-800 text-sm">{activeLabel ?? 'Church Inventory'}</span>
         <div className="w-8" />
       </header>
 
@@ -67,14 +105,14 @@ export default function AdminLayout() {
         }`}
       >
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 font-semibold text-slate-800">
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 min-w-0">
             <span className="w-7 h-7 rounded-lg bg-primary-600 flex items-center justify-center shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                 <rect x="8" y="8" width="8" height="8" rx="1.5" />
                 <path d="M9 3v3M12 3v3M15 3v3M9 18v3M12 18v3M15 18v3M3 9h3M3 12h3M3 15h3M18 9h3M18 12h3M18 15h3" strokeLinecap="round" />
               </svg>
             </span>
-            COG Dasma Inventory
+            <span className="truncate">{ministry?.name ?? 'Church Inventory'}</span>
           </span>
           <button
             className="md:hidden text-slate-400 hover:text-slate-600 text-xl leading-none"
@@ -107,7 +145,7 @@ export default function AdminLayout() {
           ))}
         </nav>
         <div className="px-4 py-4 border-t border-slate-200 space-y-2">
-          <div className="text-sm text-slate-500 truncate">{user.email}</div>
+          <div className="text-sm text-slate-500 truncate">{authUser.email}</div>
           <button
             className="text-sm text-slate-500 hover:text-slate-800"
             onClick={() => signOut(auth)}

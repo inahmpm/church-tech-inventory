@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { markItemsReturned, subscribeBorrowRequests } from '../../lib/borrowRequests';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import type { BorrowRequest } from '../../types';
 
 export default function ActiveBorrows() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
   const [returning, setReturning] = useState<string | null>(null);
 
-  useEffect(() => subscribeBorrowRequests(['borrowed'], setRequests), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['borrowed'], setRequests, ministryId);
+  }, [ministryId]);
 
   const active = requests.filter((r) => r.fulfilledAt);
 

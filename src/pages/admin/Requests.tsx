@@ -5,14 +5,20 @@ import {
   scanEquipmentIntoRequest,
   subscribeBorrowRequests,
 } from '../../lib/borrowRequests';
+import { useCurrentUser } from '../../lib/useCurrentUser';
 import type { BorrowRequest } from '../../types';
 import BarcodeScanner from '../../components/BarcodeScanner';
 
 export default function Requests() {
+  const { profile } = useCurrentUser();
+  const ministryId = profile?.ministryId;
   const [requests, setRequests] = useState<BorrowRequest[]>([]);
   const [open, setOpen] = useState<BorrowRequest | null>(null);
 
-  useEffect(() => subscribeBorrowRequests(['pending', 'borrowed'], setRequests), []);
+  useEffect(() => {
+    if (!ministryId) return;
+    return subscribeBorrowRequests(['pending', 'borrowed'], setRequests, ministryId);
+  }, [ministryId]);
 
   // Keep the open request panel in sync with live updates (e.g. items added).
   useEffect(() => {
@@ -103,7 +109,7 @@ function ScanPanel({ request, onClose }: { request: BorrowRequest; onClose: () =
   async function handleScan(code: string) {
     setError(null);
     try {
-      await scanEquipmentIntoRequest(request.id, code);
+      await scanEquipmentIntoRequest(request.id, request.ministryId, code);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan item.');
     }
