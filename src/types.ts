@@ -18,9 +18,18 @@ export interface Ministry {
   name: string;
   slug: string; // used in /borrow/:slug
   inventoryCodePrefix: string; // e.g. "TECH", "AV", "MUSIC"
-  notificationEmail: string;
+  notificationEmail?: string;
+  department?: string;
   createdAt: number;
   updatedAt: number;
+}
+
+export const DEFAULT_DEPARTMENTS = ['Worship', 'Outreach', 'Relationship', 'Discipleship', 'Administration'] as const;
+
+export interface Department {
+  id: string; // Firestore doc id
+  name: string;
+  createdAt: number;
 }
 
 export interface AppUser {

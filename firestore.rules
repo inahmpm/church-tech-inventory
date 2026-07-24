@@ -72,6 +72,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() || sameMinistry(request.resource.data.ministryId);
     }
 
+    // Departments: a shared list used to categorize ministries (Worship,
+    // Outreach, etc). Any signed-in user can read it; only super-admins
+    // (who are the only ones who can create ministries) can add new ones.
+    match /departments/{departmentId} {
+      allow read: if isSignedIn();
+      allow create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+
     // Borrow requests: the public can create a request against a specific
     // ministry (the borrower's form), but only that ministry's admins/members
     // (or a super-admin) can read the list, update it (scanning/finalizing/

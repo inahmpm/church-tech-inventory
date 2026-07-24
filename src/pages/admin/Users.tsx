@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { getMinistry } from '../../lib/ministries';
 import { useCurrentUser } from '../../lib/useCurrentUser';
 import { createUserInMinistry, setUserActive, setUserRole, subscribeMinistryUsers } from '../../lib/users';
-import type { AppUser, UserRole } from '../../types';
+import type { AppUser, Ministry, UserRole } from '../../types';
 
 function generateTempPassword() {
   return `Church${Math.floor(1000 + Math.random() * 9000)}!${Math.random().toString(36).slice(2, 6)}`;
@@ -9,6 +10,7 @@ function generateTempPassword() {
 
 export default function Users() {
   const { profile } = useCurrentUser();
+  const [ministry, setMinistry] = useState<Ministry | null>(null);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('member');
@@ -24,6 +26,11 @@ export default function Users() {
   useEffect(() => {
     if (!ministryId) return;
     return subscribeMinistryUsers(ministryId, setUsers);
+  }, [ministryId]);
+
+  useEffect(() => {
+    if (!ministryId) return;
+    getMinistry(ministryId).then(setMinistry);
   }, [ministryId]);
 
   async function handleCreate(e: FormEvent) {
@@ -81,7 +88,19 @@ export default function Users() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-slate-800">Users</h1>
+      <div>
+        <h1 className="text-xl font-semibold text-slate-800">Users</h1>
+        {ministry && (
+          <p className="text-sm text-slate-500">
+            {ministry.name}
+            {ministry.department && (
+              <span className="ml-2 inline-block rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+                {ministry.department}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {created && (
@@ -154,14 +173,15 @@ export default function Users() {
               </div>
             </div>
           ) : (
-            <div key={u.uid} className="card flex items-center justify-between">
-              <div>
-                <p className="font-medium text-slate-800">{u.email}</p>
+            <div key={u.uid} className="card flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-slate-800 break-words">{u.email}</p>
                 <p className="text-sm text-slate-500">
+                  {ministry?.department && <>{ministry.department} &middot; </>}
                   {u.role} &middot; {u.active ? 'Active' : 'Disabled'}
                 </p>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 shrink-0">
                 <button className="text-sm text-primary-600 hover:underline" onClick={() => startEdit(u)}>
                   Edit
                 </button>

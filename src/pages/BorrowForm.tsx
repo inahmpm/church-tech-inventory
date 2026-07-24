@@ -32,7 +32,7 @@ export default function BorrowForm() {
     if (!ministry) return;
     setSubmitting(true);
     try {
-      await submitBorrowRequest({ ...form, ministryId: ministry.id }, ministry.notificationEmail);
+      await submitBorrowRequest({ ...form, ministryId: ministry.id }, ministry.notificationEmail ?? '');
       setSubmittedAt(Date.now());
       setForm(initialForm);
     } catch (err) {
