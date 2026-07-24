@@ -18,9 +18,16 @@ export function logHistory(entry: {
   });
 }
 
-export function subscribeHistoryLogs(cb: (items: HistoryLogEntry[]) => void) {
+export function subscribeHistoryLogs(cb: (items: HistoryLogEntry[]) => void, onError?: (err: Error) => void) {
   const q = query(historyLogsCol, orderBy('timestamp', 'desc'));
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<HistoryLogEntry, 'id'>) })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<HistoryLogEntry, 'id'>) })));
+    },
+    (err) => {
+      console.error('Failed to subscribe to history logs', err);
+      onError?.(err);
+    },
+  );
 }

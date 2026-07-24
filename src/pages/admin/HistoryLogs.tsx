@@ -27,8 +27,9 @@ export default function HistoryLogs() {
   const [logs, setLogs] = useState<HistoryLogEntry[]>([]);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState<'' | HistoryLogAction>('');
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => subscribeHistoryLogs(setLogs), []);
+  useEffect(() => subscribeHistoryLogs(setLogs, (err) => setError(err.message)), []);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -71,7 +72,11 @@ export default function HistoryLogs() {
         </div>
       </div>
 
-      {rows.length === 0 && <div className="card text-center text-slate-400 py-10">No movements logged yet.</div>}
+      {error && (
+        <div className="card text-center text-red-600 py-10">Couldn't load history logs: {error}</div>
+      )}
+
+      {!error && rows.length === 0 && <div className="card text-center text-slate-400 py-10">No movements logged yet.</div>}
 
       {rows.length > 0 && (
         <>
