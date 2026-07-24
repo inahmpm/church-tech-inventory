@@ -20,6 +20,7 @@ type SortKey =
   | 'subcategory'
   | 'inventoryCode'
   | 'item'
+  | 'serialNumber'
   | 'assignedType'
   | 'assignedTo'
   | 'location'
@@ -33,6 +34,7 @@ const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: 'subcategory', label: 'Subcategory', className: 'hidden md:table-cell' },
   { key: 'inventoryCode', label: 'Inventory Code' },
   { key: 'item', label: 'Items' },
+  { key: 'serialNumber', label: 'Serial Number', className: 'hidden lg:table-cell' },
   { key: 'assignedType', label: 'Assigned Type' },
   { key: 'assignedTo', label: 'Assigned to', className: 'hidden md:table-cell' },
   { key: 'location', label: 'Location', className: 'hidden lg:table-cell' },
@@ -101,7 +103,16 @@ export default function Inventory() {
     const q = search.trim().toLowerCase();
     return equipment.filter((e) => {
       if (q) {
-        const matches = [e.category, e.subcategory, e.inventoryCode, e.item, e.assignedTo, e.location, e.status]
+        const matches = [
+          e.category,
+          e.subcategory,
+          e.inventoryCode,
+          e.item,
+          e.serialNumber,
+          e.assignedTo,
+          e.location,
+          e.status,
+        ]
           .join(' ')
           .toLowerCase()
           .includes(q);
@@ -424,6 +435,7 @@ export default function Inventory() {
                   <Td className="hidden md:table-cell">{e.subcategory || '—'}</Td>
                   <Td className="font-mono">{e.inventoryCode}</Td>
                   <Td>{e.item}</Td>
+                  <Td className="hidden lg:table-cell font-mono">{e.serialNumber || '—'}</Td>
                   <Td>{e.assignedType}</Td>
                   <Td className="hidden md:table-cell">{e.assignedTo || '—'}</Td>
                   <Td className="hidden lg:table-cell">{e.location || '—'}</Td>
@@ -440,7 +452,7 @@ export default function Inventory() {
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={12} className="text-center text-slate-400 py-8">
+                <td colSpan={13} className="text-center text-slate-400 py-8">
                   No equipment found.
                 </td>
               </tr>
