@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [pending, setPending] = useState<BorrowRequest[]>([]);
   const [active, setActive] = useState<BorrowRequest[]>([]);
+  const [subCategoryFilter, setSubCategoryFilter] = useState('');
 
   useEffect(() => subscribeEquipment(setEquipment), []);
   useEffect(() => subscribeBorrowRequests(['pending'], setPending), []);
@@ -26,6 +27,15 @@ export default function Dashboard() {
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }, [equipment]);
 
+  const bySubCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of equipment) {
+      if (e.category !== subCategoryFilter) continue;
+      map.set(e.subcategory, (map.get(e.subcategory) ?? 0) + 1);
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  }, [equipment, subCategoryFilter]);
+
   const borrowedCount = equipment.filter((e) => e.isBorrowed).length;
 
   return (
@@ -37,7 +47,7 @@ export default function Dashboard() {
         <StatCard label="Active Borrows" value={active.length} accent="text-blue-600" />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         <div className="card">
           <h2 className="font-semibold text-slate-800 mb-4">Equipment by Status</h2>
           <div className="space-y-2">
@@ -69,6 +79,36 @@ export default function Dashboard() {
             {byCategory.map(([category, count]) => (
               <div key={category} className="flex justify-between text-sm">
                 <span className="text-slate-600">{category}</span>
+                <span className="font-medium text-slate-800">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="font-semibold text-slate-800 mb-4">Equipment by Sub-Category</h2>
+          <select
+            className="input mb-4"
+            value={subCategoryFilter}
+            onChange={(e) => setSubCategoryFilter(e.target.value)}
+          >
+            <option value="">Select a category…</option>
+            {byCategory.map(([category]) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+          {!subCategoryFilter && (
+            <p className="text-sm text-slate-400">Choose a category to see its sub-categories.</p>
+          )}
+          {subCategoryFilter && bySubCategory.length === 0 && (
+            <p className="text-sm text-slate-400">No equipment in this category.</p>
+          )}
+          <div className="space-y-2">
+            {bySubCategory.map(([subcategory, count]) => (
+              <div key={subcategory} className="flex justify-between text-sm">
+                <span className="text-slate-600">{subcategory}</span>
                 <span className="font-medium text-slate-800">{count}</span>
               </div>
             ))}
