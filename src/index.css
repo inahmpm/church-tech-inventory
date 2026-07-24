@@ -27,3 +27,14 @@ body {
     @apply bg-white rounded-2xl shadow-sm ring-1 ring-slate-100 p-4 sm:p-6;
   }
 }
+
+@media print {
+  aside,
+  header {
+    display: none !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
