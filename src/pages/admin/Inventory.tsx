@@ -380,7 +380,7 @@ export default function Inventory() {
 
       {/* Desktop / tablet table */}
       <div className="card overflow-x-auto p-0 hidden sm:block">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full text-xs lg:text-sm">
           <thead className="bg-slate-50 text-slate-500 text-left">
             <tr>
               <Th>
@@ -513,7 +513,7 @@ function Th({
 }) {
   return (
     <th
-      className={`px-4 py-3 font-medium select-none ${onClick ? 'cursor-pointer hover:text-slate-700' : ''} ${className}`}
+      className={`px-2 py-2 lg:px-4 lg:py-3 font-medium select-none whitespace-nowrap ${onClick ? 'cursor-pointer hover:text-slate-700' : ''} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -522,7 +522,7 @@ function Th({
 }
 function Td({ children, className = '', title }: { children: React.ReactNode; className?: string; title?: string }) {
   return (
-    <td className={`px-4 py-3 text-slate-700 ${className}`} title={title}>
+    <td className={`px-2 py-2 lg:px-4 lg:py-3 text-slate-700 whitespace-nowrap ${className}`} title={title}>
       {children}
     </td>
   );
