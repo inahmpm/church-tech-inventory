@@ -17,6 +17,37 @@ import type { Equipment, NewEquipment } from '../types';
 
 const equipmentCol = collection(db, 'equipment');
 
+const FIELD_LABELS: Partial<Record<keyof NewEquipment, string>> = {
+  category: 'Category',
+  subcategory: 'Sub-Category',
+  inventoryCode: 'Inventory Code',
+  item: 'Item',
+  serialNumber: 'Serial Number',
+  assignedType: 'Assigned Type',
+  assignedTo: 'Assigned To',
+  location: 'Location',
+  purchaseDate: 'Purchase Date',
+  status: 'Status',
+  statusDetails: 'Status Details',
+};
+
+function formatValue(value: unknown): string {
+  if (value === '' || value === null || value === undefined) return '(empty)';
+  return String(value);
+}
+
+function describeChanges(before: Equipment, after: Partial<NewEquipment>): string {
+  const changes: string[] = [];
+  for (const key of Object.keys(after) as (keyof NewEquipment)[]) {
+    const newValue = after[key];
+    const oldValue = before[key];
+    if (newValue === oldValue) continue;
+    const label = FIELD_LABELS[key] ?? key;
+    changes.push(`${label}: ${formatValue(oldValue)} → ${formatValue(newValue)}`);
+  }
+  return changes.length > 0 ? changes.join('\n') : 'No changes';
+}
+
 export function subscribeEquipment(cb: (items: Equipment[]) => void) {
   const q = query(equipmentCol, orderBy('category'), orderBy('item'));
   return onSnapshot(q, (snap) => {
@@ -41,14 +72,14 @@ export async function createEquipment(data: NewEquipment) {
   }).catch((err) => console.error('Failed to log history for created equipment', err));
 }
 
-export async function updateEquipment(id: string, data: Partial<NewEquipment>) {
+export async function updateEquipment(id: string, data: Partial<NewEquipment>, before?: Equipment) {
   await updateDoc(doc(db, 'equipment', id), { ...data, updatedAt: Date.now() });
   await logHistory({
     equipmentId: id,
-    inventoryCode: data.inventoryCode ?? '',
-    item: data.item ?? '',
+    inventoryCode: data.inventoryCode ?? before?.inventoryCode ?? '',
+    item: data.item ?? before?.item ?? '',
     action: 'updated',
-    details: `Updated: ${Object.keys(data).join(', ')}`,
+    details: before ? describeChanges(before, data) : `Updated: ${Object.keys(data).join(', ')}`,
   }).catch((err) => console.error('Failed to log history for updated equipment', err));
 }
 

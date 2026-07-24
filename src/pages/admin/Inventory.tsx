@@ -195,7 +195,7 @@ export default function Inventory() {
     if (selected === 'new') {
       await createEquipment(data);
     } else if (selected) {
-      await updateEquipment(selected.id, data);
+      await updateEquipment(selected.id, data, selected);
     }
   }
 
