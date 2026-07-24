@@ -3,6 +3,9 @@ import { getMinistry } from '../../lib/ministries';
 import { useCurrentUser } from '../../lib/useCurrentUser';
 import { createUserInMinistry, setUserActive, setUserRole, subscribeMinistryUsers } from '../../lib/users';
 import type { AppUser, Ministry, UserRole } from '../../types';
+import { useCurrentUser } from '../../lib/useCurrentUser';
+import { createUserInMinistry, setUserActive, subscribeMinistryUsers } from '../../lib/users';
+import type { AppUser, UserRole } from '../../types';
 
 function generateTempPassword() {
   return `Church${Math.floor(1000 + Math.random() * 9000)}!${Math.random().toString(36).slice(2, 6)}`;
@@ -101,6 +104,9 @@ export default function Users() {
           </p>
         )}
       </div>
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold text-slate-800">Users</h1>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
       {created && (
@@ -195,6 +201,22 @@ export default function Users() {
             </div>
           ),
         )}
+        {users.map((u) => (
+          <div key={u.uid} className="card flex items-center justify-between">
+            <div>
+              <p className="font-medium text-slate-800">{u.email}</p>
+              <p className="text-sm text-slate-500">
+                {u.role} &middot; {u.active ? 'Active' : 'Disabled'}
+              </p>
+            </div>
+            <button
+              className={`text-sm hover:underline ${u.active ? 'text-red-600' : 'text-primary-600'}`}
+              onClick={() => handleToggleActive(u)}
+            >
+              {u.active ? 'Disable' : 'Re-enable'}
+            </button>
+          </div>
+        ))}
         {users.length === 0 && <div className="text-center text-slate-400 py-8">No users yet.</div>}
       </div>
     </div>

@@ -41,6 +41,7 @@ export interface NewMinistry {
   inventoryCodePrefix: string;
   notificationEmail?: string;
   department: string;
+  notificationEmail: string;
 }
 
 export async function createMinistry(data: NewMinistry) {

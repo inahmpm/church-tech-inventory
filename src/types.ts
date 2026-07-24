@@ -20,6 +20,7 @@ export interface Ministry {
   inventoryCodePrefix: string; // e.g. "TECH", "AV", "MUSIC"
   notificationEmail?: string;
   department?: string;
+  notificationEmail: string;
   createdAt: number;
   updatedAt: number;
 }

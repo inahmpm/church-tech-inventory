@@ -10,6 +10,7 @@ export function subscribeMinistryUsers(ministryId: string, cb: (users: AppUser[]
   const q = query(usersCol, where('ministryId', '==', ministryId), orderBy('email'));
   return onSnapshot(q, (snap) => {
     cb(snap.docs.map((d) => ({ uid: d.id, ...(d.data() as Omit<AppUser, 'uid'>) })));
+    cb(snap.docs.map((d) => d.data() as AppUser));
   });
 }
 
