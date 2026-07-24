@@ -63,12 +63,20 @@ export async function deleteEquipment(id: string, equipment: Pick<Equipment, 'in
   }).catch((err) => console.error('Failed to log history for deleted equipment', err));
 }
 
-export async function deleteEquipmentBulk(items: Pick<Equipment, 'id' | 'inventoryCode' | 'item'>[]) {
-  const batch = writeBatch(db);
-  for (const item of items) {
-    batch.delete(doc(db, 'equipment', item.id));
+const FIRESTORE_BATCH_LIMIT = 500;
+
+export async function deleteEquipmentBulk(
+  items: Pick<Equipment, 'id' | 'inventoryCode' | 'item'>[],
+  details = 'Removed from inventory (bulk delete)',
+) {
+  for (let i = 0; i < items.length; i += FIRESTORE_BATCH_LIMIT) {
+    const chunk = items.slice(i, i + FIRESTORE_BATCH_LIMIT);
+    const batch = writeBatch(db);
+    for (const item of chunk) {
+      batch.delete(doc(db, 'equipment', item.id));
+    }
+    await batch.commit();
   }
-  await batch.commit();
   await Promise.all(
     items.map((item) =>
       logHistory({
@@ -76,7 +84,7 @@ export async function deleteEquipmentBulk(items: Pick<Equipment, 'id' | 'invento
         inventoryCode: item.inventoryCode,
         item: item.item,
         action: 'deleted',
-        details: 'Removed from inventory (bulk delete)',
+        details,
       }).catch((err) => console.error('Failed to log history for bulk-deleted equipment', err)),
     ),
   );
