@@ -219,6 +219,29 @@ export default function Inventory() {
     setSelectedIds(new Set());
   }
 
+  async function handleDeleteAll() {
+    const borrowed = equipment.filter((e) => e.isBorrowed);
+    const deletable = equipment.filter((e) => !e.isBorrowed);
+
+    if (deletable.length === 0) {
+      alert('There are no items in the inventory that can be deleted.');
+      return;
+    }
+
+    const warning =
+      borrowed.length > 0
+        ? `${borrowed.length} item(s) are currently borrowed and will be skipped. `
+        : '';
+    const confirmation = prompt(
+      `${warning}This will permanently delete ALL ${deletable.length} item(s) in the inventory. This cannot be undone.\n\nType DELETE to confirm.`,
+    );
+    if (confirmation !== 'DELETE') return;
+
+    await deleteEquipmentBulk(deletable, 'Removed from inventory (delete all)');
+    setSelectedIds(new Set());
+    setSelected(null);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -311,6 +334,11 @@ export default function Inventory() {
           <button className="btn-primary whitespace-nowrap" onClick={() => setSelected('new')}>
             + Add Equipment
           </button>
+          {equipment.length > 0 && (
+            <button className="btn-secondary whitespace-nowrap text-red-600" onClick={handleDeleteAll}>
+              Delete All
+            </button>
+          )}
         </div>
       </div>
 
