@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { HISTORY_LOG_ACTION_COLORS, HISTORY_LOG_ACTION_LABELS, subscribeHistoryLogs } from '../lib/historyLogs';
 import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
 import type { AssignedType, Category, Equipment, EquipmentStatus, HistoryLogEntry, NewEquipment } from '../types';
-import BarcodeLabel from './BarcodeLabel';
 import BarcodeLabel, { generateBarcodeSvgMarkup } from './BarcodeLabel';
 
 export default function EquipmentPanel({
