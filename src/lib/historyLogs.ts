@@ -4,6 +4,26 @@ import type { HistoryLogAction, HistoryLogEntry } from '../types';
 
 const historyLogsCol = collection(db, 'historyLogs');
 
+export const HISTORY_LOG_ACTION_LABELS: Record<HistoryLogAction, string> = {
+  created: 'Added',
+  updated: 'Updated',
+  deleted: 'Deleted',
+  borrowed: 'Borrowed',
+  removed: 'Removed from request',
+  handed_out: 'Handed out',
+  returned: 'Returned',
+};
+
+export const HISTORY_LOG_ACTION_COLORS: Record<HistoryLogAction, string> = {
+  created: 'bg-green-100 text-green-700',
+  updated: 'bg-slate-100 text-slate-600',
+  deleted: 'bg-red-100 text-red-700',
+  borrowed: 'bg-amber-100 text-amber-700',
+  removed: 'bg-orange-100 text-orange-700',
+  handed_out: 'bg-sky-100 text-sky-700',
+  returned: 'bg-lime-100 text-lime-700',
+};
+
 export function logHistory(entry: {
   equipmentId: string;
   inventoryCode: string;

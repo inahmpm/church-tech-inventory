@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { HISTORY_LOG_ACTION_COLORS, HISTORY_LOG_ACTION_LABELS, subscribeHistoryLogs } from '../lib/historyLogs';
 import { ASSIGNED_TYPES, EQUIPMENT_STATUSES } from '../types';
-import type { AssignedType, Category, Equipment, EquipmentStatus, NewEquipment } from '../types';
+import type { AssignedType, Category, Equipment, EquipmentStatus, HistoryLogEntry, NewEquipment } from '../types';
 import BarcodeLabel from './BarcodeLabel';
 
 export default function EquipmentPanel({
@@ -21,12 +22,22 @@ export default function EquipmentPanel({
   const [form, setForm] = useState<NewEquipment>(blankForm(initial));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [history, setHistory] = useState<HistoryLogEntry[]>([]);
+  const [selectedLog, setSelectedLog] = useState<HistoryLogEntry | null>(null);
 
   useEffect(() => {
     if (open) {
       setForm(blankForm(initial));
       setError(null);
     }
+  }, [initial, open]);
+
+  useEffect(() => {
+    if (!open || !initial) {
+      setHistory([]);
+      return;
+    }
+    return subscribeHistoryLogs((logs) => setHistory(logs.filter((l) => l.equipmentId === initial.id)));
   }, [initial, open]);
 
   const subcategoryOptions = categories.find((c) => c.name === form.category)?.subcategories ?? [];
@@ -213,6 +224,34 @@ export default function EquipmentPanel({
           </Field>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {initial && (
+            <div className="pt-2 border-t border-slate-100">
+              <span className="block text-sm font-medium text-slate-700 mb-2">History</span>
+              {history.length === 0 && <p className="text-xs text-slate-400">No movements logged yet.</p>}
+              <ul className="space-y-2">
+                {history.map((log) => (
+                  <li
+                    key={log.id}
+                    className="text-xs border border-slate-100 rounded-lg p-2 cursor-pointer hover:bg-slate-50"
+                    onClick={() => setSelectedLog(log)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${HISTORY_LOG_ACTION_COLORS[log.action]}`}
+                      >
+                        {HISTORY_LOG_ACTION_LABELS[log.action]}
+                      </span>
+                      <span className="text-slate-400 whitespace-nowrap">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-slate-600 line-clamp-2">{log.details}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-2 px-5 py-4 border-t border-slate-200">
@@ -234,6 +273,37 @@ export default function EquipmentPanel({
         </div>
         </form>
       </div>
+
+      {selectedLog && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setSelectedLog(null)}
+        >
+          <div className="card w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="font-semibold text-slate-800">{selectedLog.item}</div>
+                <div className="text-xs font-mono text-slate-400">{selectedLog.inventoryCode}</div>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${HISTORY_LOG_ACTION_COLORS[selectedLog.action]}`}
+              >
+                {HISTORY_LOG_ACTION_LABELS[selectedLog.action]}
+              </span>
+            </div>
+            <div className="text-sm text-slate-700 whitespace-pre-wrap">{selectedLog.details}</div>
+            <div className="text-xs text-slate-400">
+              {new Date(selectedLog.timestamp).toLocaleString()}
+              {selectedLog.actor ? ` · ${selectedLog.actor}` : ''}
+            </div>
+            <div className="flex justify-end pt-1">
+              <button type="button" className="btn-secondary" onClick={() => setSelectedLog(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
